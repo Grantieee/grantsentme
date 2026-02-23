@@ -59,4 +59,4 @@ body { margin: 0; padding: 0; }
     map.on('mouseleave', 'YOUR_LAYER_ID', () => { map.getCanvas().style.cursor = ''; });
 </script>
 </body>
-</html>
+</html> 
