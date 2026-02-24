@@ -73,22 +73,34 @@
     });
 
     map.on('click', 'grantsentmemap', (e) => {
-        const coordinates = e.features[0].geometry.coordinates.slice();
         const props = e.features[0].properties;
+        const coordinates = e.features[0].geometry.coordinates.slice();
+
+        // This helps us see exactly what Mapbox sees in the browser console (F12)
+        console.log("Point Data:", props);
 
         const html = `
             <div class="popup-title">${props.Name || 'Place Name'}</div>
             <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
             
-            ${props.Image_URL ? `<img class="popup-img" src="${props.Image_URL}">` : ''}
+            ${props['Photo URL'] ? 
+                `<img class="popup-img" src="${props['Photo URL'].trim()}" style="width:100%; border:1px solid #000; margin-top:5px;" onerror="this.style.display='none'">` : ''}
             
-            <div class="popup-take">${props.Review || 'No review yet.'}</div>
+            <div class="popup-take" style="margin-top:10px;">${props.Review || 'No review yet.'}</div>
             
             <div class="btn-container">
-                ${props['Social Link'] ? `<a href="${props['Social Link']}" target="_blank" class="btn btn-black">Social</a>` : ''}
-                ${props.Website ? `<a href="${props.Website}" target="_blank" class="btn btn-outline">Website</a>` : ''}
+                ${(props['IG Link'] || props['Social Link']) ? 
+                    `<a href="${(props['IG Link'] || props['Social Link']).trim()}" target="_blank" class="btn btn-black">Social</a>` : ''}
+                
+                ${props.Website ? `<a href="${props.Website.trim()}" target="_blank" class="btn btn-outline">Website</a>` : ''}
             </div>
         `;
+
+        new mapboxgl.Popup({ offset: 25 })
+            .setLngLat(coordinates)
+            .setHTML(html)
+            .addTo(map);
+    });
 
         new mapboxgl.Popup({ offset: 25 })
             .setLngLat(coordinates)
