@@ -7,23 +7,59 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js"></script>
 <style>
-body { margin: 0; padding: 0; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #000; }
+    body { margin: 0; padding: 0; background-color: #000; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-.mapboxgl-popup-content {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    padding: 20px;
-    border: 3px solid #FF0000;
-    border-radius: 0px; 
-    box-shadow: 10px 10px 0px rgba(0,0,0,0.5);
-}
-.popup-title { font-weight: 900; text-transform: uppercase; font-size: 18px; margin-bottom: 2px; letter-spacing: -0.5px; }
-.popup-order { color: #FF0000; font-weight: bold; font-size: 14px; margin-bottom: 10px; text-transform: uppercase; }
-.popup-take { font-size: 13px; line-height: 1.5; color: #333; border-top: 1px solid #eee; padding-top: 10px; }
+    /* Category Filter Styling */
+    .filter-group {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1;
+        background: #fff;
+        padding: 10px;
+        border: 2px solid #FF0000;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .mapboxgl-popup-content {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        padding: 15px;
+        border: 3px solid #FF0000;
+        border-radius: 0px; 
+        box-shadow: 8px 8px 0px rgba(0,0,0,0.8);
+        max-width: 280px;
+    }
+    .popup-title { font-weight: 900; text-transform: uppercase; font-size: 18px; margin-bottom: 2px; }
+    .popup-score { color: #FF0000; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+    .popup-img { width: 100%; height: auto; border: 1px solid #000; margin: 8px 0; }
+    .popup-take { font-size: 13px; line-height: 1.4; color: #333; margin-bottom: 12px; }
+    
+    .btn-container { display: flex; gap: 5px; }
+    .btn { 
+        flex: 1; text-align: center; padding: 8px; font-size: 10px; 
+        font-weight: bold; text-decoration: none; text-transform: uppercase;
+    }
+    .btn-black { background: #000; color: #fff; }
+    .btn-outline { border: 1px solid #000; color: #000; }
 </style>
 </head>
 <body>
+
 <div id="map"></div>
+
+<div class="filter-group">
+    <label style="font-weight:bold; font-size:12px;">CATEGORY: </label>
+    <select id="category-select" style="border:none; outline:none; font-family:inherit;">
+        <option value="all">Show All</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Bakery/Cafe">Bakery/Cafe</option>
+        <option value="Bar/Speakeasy">Bar/Speakeasy</option>
+        <option value="Street Food">Street Food</option>
+        <option value="Shop">Shop</option>
+    </select>
+</div>
+
 <script>
 	mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
     const map = new mapboxgl.Map({
@@ -40,27 +76,38 @@ body { margin: 0; padding: 0; }
         const coordinates = e.features[0].geometry.coordinates.slice();
         const props = e.features[0].properties;
 
-        // Using your exact spreadsheet labels: Score and Review
         const html = `
             <div class="popup-title">${props.Name || 'Place Name'}</div>
-            <div class="popup-order">SCORE: ${props.Score || 'N/A'}</div>
+            <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
+            
+            ${props.Image_URL ? `<img class="popup-img" src="${props.Image_URL}">` : ''}
+            
             <div class="popup-take">${props.Review || 'No review yet.'}</div>
+            
+            <div class="btn-container">
+                ${props['Social Link'] ? `<a href="${props['Social Link']}" target="_blank" class="btn btn-black">Social</a>` : ''}
+                ${props.Website ? `<a href="${props.Website}" target="_blank" class="btn btn-outline">Website</a>` : ''}
+            </div>
         `;
 
-        // Fixed the bracket typo here
         new mapboxgl.Popup({ offset: 25 })
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
     });
 
-    map.on('mouseenter', 'grantsentmemap', () => {
-        map.getCanvas().style.cursor = 'pointer';
+    // Category Filter Logic
+    document.getElementById('category-select').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'all') {
+            map.setFilter('grantsentmemap', null);
+        } else {
+            map.setFilter('grantsentmemap', ['==', ['get', 'Category'], val]);
+        }
     });
 
-    map.on('mouseleave', 'grantsentmemap', () => {
-        map.getCanvas().style.cursor = '';
-    });
+    map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
 </script>
 </body>
 </html>
