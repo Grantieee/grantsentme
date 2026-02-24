@@ -41,12 +41,12 @@ body { margin: 0; padding: 0; }
         const props = e.features[0].properties;
 
         const html = `
-            <div class="popup-title">${props.Name}</div>
-            <div class="popup-order">THE ORDER: ${props.Order}</div>
-            <div class="popup-take">${props['Uncs Take...']}</div>
+            <div class="popup-title">${props.Name || 'Place Name'}</div>
+            <div class="popup-order">SCORE: ${props.Score || 'N/A'}</div>
+            <div class="popup-take">${props.Review || 'No review yet.'}</div>
         `;
 
-        new mapboxgl.Popup()
+        new mapboxgl.Popup( offset: 25 )
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
