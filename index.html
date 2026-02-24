@@ -10,7 +10,6 @@
     body { margin: 0; padding: 0; background-color: #000; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-    /* Category Filter UI */
     .filter-group {
         position: absolute;
         top: 20px;
@@ -22,7 +21,6 @@
         font-family: 'Helvetica Neue', Arial, sans-serif;
     }
 
-    /* Popup Styling */
     .mapboxgl-popup-content {
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         padding: 15px;
@@ -78,19 +76,31 @@
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
 
-        // Build the Popup HTML
+        // Fix for column naming and spacing
+        const imgSource = props['Photo URL'] || props['Photo URL '];
+        const socialLink = props['Social Link'] || props['IG Link'];
+        const webLink = props['Link to their Website'];
+
+        // Helper function to force links to be external (prevents 404s)
+        const formatLink = (link) => {
+            if (!link) return null;
+            let clean = link.trim();
+            if (clean.startsWith('@')) return `https://www.instagram.com/${clean.replace('@','')}`;
+            if (!clean.startsWith('http')) return `https://${clean}`;
+            return clean;
+        };
+
         const html = `
             <div class="popup-title">${props.Name || 'Place Name'}</div>
             <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
             
-            ${props['Photo URL'] ? 
-                `<img class="popup-img" src="${props['Photo URL'].trim()}" onerror="this.style.display='none'">` : ''}
+            ${imgSource ? `<img class="popup-img" src="${imgSource.trim()}" onerror="this.style.display='none'">` : ''}
             
             <div class="popup-take">${props.Review || 'No review yet.'}</div>
             
             <div class="btn-container">
-                ${props['IG Link'] ? `<a href="${props['IG Link'].trim()}" target="_blank" class="btn btn-black">Social</a>` : ''}
-                ${props['Link to their Website'] ? `<a href="${props['Link to their Website'].trim()}" target="_blank" class="btn btn-outline">Website</a>` : ''}
+                ${socialLink ? `<a href="${formatLink(socialLink)}" target="_blank" class="btn btn-black">Social</a>` : ''}
+                ${webLink ? `<a href="${formatLink(webLink)}" target="_blank" class="btn btn-outline">Website</a>` : ''}
             </div>
         `;
 
@@ -100,7 +110,6 @@
             .addTo(map);
     });
 
-    // Category Filter Logic (Case-insensitive)
     document.getElementById('category-select').addEventListener('change', (e) => {
         const val = e.target.value;
         if (val === 'all') {
@@ -110,7 +119,6 @@
         }
     });
 
-    // Cursor behavior
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
 
