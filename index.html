@@ -10,7 +10,7 @@
     body { margin: 0; padding: 0; background-color: #000; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-    /* Category Filter Styling */
+    /* Category Filter UI */
     .filter-group {
         position: absolute;
         top: 20px;
@@ -22,6 +22,7 @@
         font-family: 'Helvetica Neue', Arial, sans-serif;
     }
 
+    /* Popup Styling */
     .mapboxgl-popup-content {
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         padding: 15px;
@@ -32,8 +33,8 @@
     }
     .popup-title { font-weight: 900; text-transform: uppercase; font-size: 18px; margin-bottom: 2px; }
     .popup-score { color: #FF0000; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
-    .popup-img { width: 100%; height: auto; border: 1px solid #000; margin: 8px 0; }
-    .popup-take { font-size: 13px; line-height: 1.4; color: #333; margin-bottom: 12px; }
+    .popup-img { width: 100%; height: auto; border: 1px solid #000; margin: 8px 0; display: block; }
+    .popup-take { font-size: 13px; line-height: 1.4; color: #333; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 8px; }
     
     .btn-container { display: flex; gap: 5px; }
     .btn { 
@@ -49,8 +50,8 @@
 <div id="map"></div>
 
 <div class="filter-group">
-    <label style="font-weight:bold; font-size:12px;">CATEGORY: </label>
-    <select id="category-select" style="border:none; outline:none; font-family:inherit;">
+    <label style="font-weight:bold; font-size:12px;">FILTER: </label>
+    <select id="category-select" style="border:none; outline:none; font-family:inherit; cursor:pointer;">
         <option value="all">Show All</option>
         <option value="Restaurant">Restaurant</option>
         <option value="Bakery/Cafe">Bakery/Cafe</option>
@@ -61,7 +62,8 @@
 </div>
 
 <script>
-	mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
+    
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/grantsentme/cmlzkldac001601scglds8nyx', 
@@ -76,23 +78,19 @@
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
 
-        // This helps us see exactly what Mapbox sees in the browser console (F12)
-        console.log("Point Data:", props);
-
+        // Build the Popup HTML
         const html = `
             <div class="popup-title">${props.Name || 'Place Name'}</div>
             <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
             
             ${props['Photo URL'] ? 
-                `<img class="popup-img" src="${props['Photo URL'].trim()}" style="width:100%; border:1px solid #000; margin-top:5px;" onerror="this.style.display='none'">` : ''}
+                `<img class="popup-img" src="${props['Photo URL'].trim()}" onerror="this.style.display='none'">` : ''}
             
-            <div class="popup-take" style="margin-top:10px;">${props.Review || 'No review yet.'}</div>
+            <div class="popup-take">${props.Review || 'No review yet.'}</div>
             
             <div class="btn-container">
-                ${(props['IG Link'] || props['Social Link']) ? 
-                    `<a href="${(props['IG Link'] || props['Social Link']).trim()}" target="_blank" class="btn btn-black">Social</a>` : ''}
-                
-                ${props.Website ? `<a href="${props.Website.trim()}" target="_blank" class="btn btn-outline">Website</a>` : ''}
+                ${props['IG Link'] ? `<a href="${props['IG Link'].trim()}" target="_blank" class="btn btn-black">Social</a>` : ''}
+                ${props['Link to their Website'] ? `<a href="${props['Link to their Website'].trim()}" target="_blank" class="btn btn-outline">Website</a>` : ''}
             </div>
         `;
 
@@ -102,24 +100,20 @@
             .addTo(map);
     });
 
-        new mapboxgl.Popup({ offset: 25 })
-            .setLngLat(coordinates)
-            .setHTML(html)
-            .addTo(map);
-    });
-
-    // Category Filter Logic
+    // Category Filter Logic (Case-insensitive)
     document.getElementById('category-select').addEventListener('change', (e) => {
         const val = e.target.value;
         if (val === 'all') {
             map.setFilter('grantsentmemap', null);
         } else {
-            map.setFilter('grantsentmemap', ['==', ['get', 'Category'], val]);
+            map.setFilter('grantsentmemap', ['==', ['downcase', ['get', 'Category']], val.toLowerCase()]);
         }
     });
 
+    // Cursor behavior
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
+
 </script>
 </body>
 </html>
