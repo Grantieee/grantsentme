@@ -10,53 +10,56 @@
 body { margin: 0; padding: 0; }
 #map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #000; }
 
-/* Mirror's Edge Popup Styling */
 .mapboxgl-popup-content {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     padding: 20px;
-    border: 2px solid #FF0000; /* Signature Red */
+    border: 2px solid #FF0000;
     border-radius: 0px; 
     box-shadow: 10px 10px 0px rgba(0,0,0,0.2);
 }
 .popup-title { font-weight: 900; text-transform: uppercase; font-size: 18px; margin-bottom: 2px; letter-spacing: -0.5px; }
 .popup-order { color: #FF0000; font-weight: bold; font-size: 14px; margin-bottom: 10px; text-transform: uppercase; }
-.popup-take { font-size: 14px; line-height: 1.5; color: #333; border-top: 1px solid #eee; padding-top: 10px; }
+.popup-take { font-size: 13px; line-height: 1.5; color: #333; border-top: 1px solid #eee; padding-top: 10px; }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <script>
-	mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg'; // Replace with your token
+	mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
     const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/dark-v11', // Replace with your style URL
-        center: [-73.988, 40.730], // Centered near East Village
+        style: 'mapbox://styles/mapbox/dark-v11', // This is the stable dark style
+        center: [-73.988, 40.730], 
         zoom: 15.5,
-        pitch: 65, // Your Mirror's Edge low angle
+        pitch: 65,
         bearing: -15,
         antialias: true
     });
 
-    map.on('click', 'grantsentmemap', (e) => { // Replace with your layer ID
+    map.on('click', 'grantsentmemap', (e) => {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const props = e.features[0].properties;
 
-        // The Popup Content Template
         const html = `
             <div class="popup-title">${props.Name}</div>
             <div class="popup-order">THE ORDER: ${props.Order}</div>
-            <div class="popup-take">${props['Uncs Take']}</div>
+            <div class="popup-take">${props['Uncs Take...']}</div>
         `;
 
-        new mapboxgl.Popup({ offset: [0, -15] })
+        new mapboxgl.Popup()
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
     });
 
-    // Cursor change on hover for interactivity
-    map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
-    map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
+    // These lines were causing the error if they had placeholders
+    map.on('mouseenter', 'grantsentmemap', () => {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', 'grantsentmemap', () => {
+        map.getCanvas().style.cursor = '';
+    });
 </script>
 </body>
 </html>
