@@ -78,7 +78,21 @@
         border: 2px solid #FF0000;
     }
 
-    /* --- POPUP STYLES --- */
+    /* --- POPUP STYLES & ANIMATION --- */
+    
+    /* This creates the continuous up-and-down hovering effect */
+    @keyframes floatPopup {
+        0% { margin-top: 0px; }
+        50% { margin-top: -10px; }
+        100% { margin-top: 0px; }
+    }
+
+    /* Applies the hover animation to the whole popup including the little point tip */
+    .mapboxgl-popup {
+        animation: floatPopup 3s ease-in-out infinite;
+        z-index: 10; /* Keeps it above other map elements */
+    }
+
     .mapboxgl-popup-content {
         padding: 15px;
         border: 3px solid #FF0000;
@@ -190,6 +204,16 @@
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
+
+        // NEW: Automatically center the map on the clicked point 
+        // We use an offset of [0, -120] to move the point down slightly, making room for the popup above it!
+        map.flyTo({
+            center: coordinates,
+            speed: 0.6, // Adjust this to make the slide faster or slower
+            curve: 1, 
+            offset: [0, -120],
+            essential: true 
+        });
     });
 
     // --- CATEGORY FILTER LOGIC ---
