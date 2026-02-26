@@ -89,4 +89,134 @@
     
     .popup-title { font-weight: 900; text-transform: uppercase; font-size: 18px; margin-bottom: 2px; }
     .popup-meta { font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
-    .popup-score { color:
+    .popup-score { color: #FF0000; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+    .popup-img { width: 100%; height: auto; border: 1px solid #000; margin: 8px 0; display: block; }
+    .popup-vibe { font-size: 12px; font-style: italic; color: #555; margin-bottom: 8px; }
+    .popup-take { font-size: 13px; line-height: 1.4; color: #333; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 8px; }
+    
+    .btn-container { display: flex; gap: 5px; }
+    .btn { 
+        flex: 1; text-align: center; padding: 8px; font-size: 10px; 
+        font-weight: bold; text-decoration: none; text-transform: uppercase;
+    }
+    .btn-black { background: #000; color: #fff; }
+    .btn-outline { border: 1px solid #000; color: #000; }
+</style>
+</head>
+<body>
+
+<div id="welcome-overlay">
+    <div class="welcome-content">
+        <div class="welcome-title">Grant's Picks</div>
+        <div class="welcome-desc">A highly curated, no-bullshit guide to my favorite spots in the city. Good food, good drinks, good vibes only.</div>
+        <button class="welcome-btn" id="enter-btn">Explore the Map</button>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<div class="filter-group">
+    <label style="font-weight:bold; font-size:12px;">FILTER: </label>
+    <select id="category-select" style="border:none; outline:none; font-family:inherit; cursor:pointer;">
+        <option value="all">Show All</option>
+        <option value="Restaurant">Restaurant</option>
+        <option value="Bakery/Cafe">Bakery/Cafe</option>
+        <option value="Bar/Speakeasy">Bar/Speakeasy</option>
+        <option value="Street Food">Street Food</option>
+        <option value="Shop">Shop</option>
+    </select>
+</div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
+    
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/grantsentme/cmlzkldac001601scglds8nyx', 
+        center: [-73.988, 40.730], 
+        zoom: 15.5,
+        pitch: 65,
+        bearing: -15,
+        antialias: true
+    });
+
+    // --- POPUP & CLICK LOGIC ---
+    map.on('click', 'grantsentmemap', (e) => {
+        const props = e.features[0].properties;
+        const coordinates = e.features[0].geometry.coordinates.slice();
+
+        // Safely grab the data
+        const imgSource = props['Photo URL'] || props['Photo URL '];
+        const socialLink = props['Social Link'] || props['IG Link'];
+        const webLink = props['Link to their Website'];
+        
+        // Grab the new columns
+        const cuisine = props.Cuisine || '';
+        const price = props.Price || '';
+        const vibe = props.Vibe || '';
+
+        // Build the "Meta" string (e.g., "VIETNAMESE • $$")
+        const metaText = [cuisine, price].filter(Boolean).join(' &bull; ');
+
+        // Clean up links to prevent 404s
+        const formatLink = (link) => {
+            if (!link) return null;
+            let clean = link.trim();
+            if (clean.startsWith('@')) return `https://www.instagram.com/${clean.replace('@','')}`;
+            if (!clean.startsWith('http')) return `https://${clean}`;
+            return clean;
+        };
+
+        const html = `
+            <div class="popup-title">${props.Name || 'Place Name'}</div>
+            
+            ${metaText ? `<div class="popup-meta">${metaText}</div>` : ''}
+            
+            <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
+            
+            ${imgSource ? `<img class="popup-img" src="${imgSource.trim()}" onerror="this.style.display='none'">` : ''}
+            
+            ${vibe ? `<div class="popup-vibe">Vibe: ${vibe}</div>` : ''}
+            
+            <div class="popup-take">${props.Review || 'No review yet.'}</div>
+            
+            <div class="btn-container">
+                ${socialLink ? `<a href="${formatLink(socialLink)}" target="_blank" class="btn btn-black">Social</a>` : ''}
+                ${webLink ? `<a href="${formatLink(webLink)}" target="_blank" class="btn btn-outline">Website</a>` : ''}
+            </div>
+        `;
+
+        new mapboxgl.Popup({ offset: 25 })
+            .setLngLat(coordinates)
+            .setHTML(html)
+            .addTo(map);
+    });
+
+    // --- CATEGORY FILTER LOGIC ---
+    document.getElementById('category-select').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'all') {
+            map.setFilter('grantsentmemap', null);
+        } else {
+            map.setFilter('grantsentmemap', ['==', ['downcase', ['get', 'Category']], val.toLowerCase()]);
+        }
+    });
+
+    // --- CURSOR BEHAVIOR ---
+    map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
+
+    // --- WELCOME OVERLAY LOGIC ---
+    document.getElementById('enter-btn').addEventListener('click', () => {
+        const overlay = document.getElementById('welcome-overlay');
+        overlay.style.opacity = '0'; // Fades it out visually
+        
+        // Waits for the fade animation to finish, then removes it completely
+        setTimeout(() => { 
+            overlay.style.display = 'none'; 
+        }, 400); 
+    });
+
+</script>
+</body>
+</html>
