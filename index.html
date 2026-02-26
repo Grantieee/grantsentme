@@ -16,23 +16,12 @@
 
     /* --- BRANDING WATERMARK --- */
     .watermark {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 10;
-        color: rgba(255, 255, 255, 0.6); /* Low opacity white */
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        text-decoration: none;
-        text-shadow: 1px 1px 0px rgba(0,0,0,0.8); /* Ensures it's readable over light and dark map areas */
-        transition: color 0.2s, opacity 0.2s;
+        position: absolute; top: 20px; left: 20px; z-index: 10;
+        color: rgba(255, 255, 255, 0.6); font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px; text-decoration: none;
+        text-shadow: 1px 1px 0px rgba(0,0,0,0.8); transition: color 0.2s, opacity 0.2s;
     }
-    .watermark:hover {
-        color: #FF0000; /* Snaps to your brand red when hovered */
-        opacity: 1;
-    }
+    .watermark:hover { color: #FF0000; opacity: 1; }
 
     /* --- WELCOME OVERLAY STYLES --- */
     #welcome-overlay {
@@ -123,19 +112,57 @@
         antialias: true
     });
 
-    // --- NEW: QUALITY OF LIFE CONTROLS ---
-    // Adds a button to find the user's GPS location
     map.addControl(new mapboxgl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
         trackUserLocation: true,
         showUserHeading: true
     }), 'bottom-right');
-
-    // Adds standard zoom and compass rotate buttons
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
+    // --- NEW: THE RADAR PULSE LOGIC ---
+    // We wait for the map to fully load, then inject a new animated layer underneath your triangles
+    map.on('load', () => {
+        const existingLayer = map.getLayer('grantsentmemap');
+        
+        if (existingLayer) {
+            // Add a circle layer using your exact same Mapbox Studio data
+            map.addLayer({
+                'id': 'pulse-layer',
+                'type': 'circle',
+                'source': existingLayer.source,
+                'source-layer': existingLayer.sourceLayer,
+                'paint': {
+                    'circle-radius': 0,
+                    'circle-color': '#FF0000', // Matches your brand red
+                    'circle-opacity': 1,
+                    'circle-stroke-width': 0
+                }
+            }, 'grantsentmemap'); // The key: This places it directly BELOW your triangles
 
-    // --- POPUP & CLICK LOGIC ---
+            // The animation engine
+            let radius = 0;
+            let opacity = 1;
+
+            function animateMarker() {
+                radius += 0.25; // How fast the ring expands
+                opacity -= 0.015; // How fast it fades out
+
+                if (radius > 18) { // Maximum size before it resets
+                    radius = 0;
+                    opacity = 1;
+                }
+
+                map.setPaintProperty('pulse-layer', 'circle-radius', radius);
+                // Math.max prevents WebGL crashing from negative opacity
+                map.setPaintProperty('pulse-layer', 'circle-opacity', Math.max(0, opacity)); 
+
+                // Loops the animation forever at 60fps
+                requestAnimationFrame(animateMarker);
+            }
+            animateMarker();
+        }
+    });
+
     map.on('click', 'grantsentmemap', (e) => {
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
@@ -182,9 +209,7 @@
         const canvas = map.getCanvas();
         canvas.classList.add('map-dimmed');
 
-        popup.on('close', () => {
-            canvas.classList.remove('map-dimmed');
-        });
+        popup.on('close', () => { canvas.classList.remove('map-dimmed'); });
 
         map.flyTo({
             center: coordinates,
@@ -195,20 +220,23 @@
         });
     });
 
-    // --- CATEGORY FILTER LOGIC ---
+    // --- UPDATED CATEGORY FILTER LOGIC ---
+    // Now applies the filter to both the icons AND the pulse rings
     document.getElementById('category-select').addEventListener('change', (e) => {
         const val = e.target.value;
         if (val === 'all') {
             map.setFilter('grantsentmemap', null);
+            if (map.getLayer('pulse-layer')) map.setFilter('pulse-layer', null);
         } else {
-            map.setFilter('grantsentmemap', ['==', ['downcase', ['get', 'Category']], val.toLowerCase()]);
+            const filterRules = ['==', ['downcase', ['get', 'Category']], val.toLowerCase()];
+            map.setFilter('grantsentmemap', filterRules);
+            if (map.getLayer('pulse-layer')) map.setFilter('pulse-layer', filterRules);
         }
     });
 
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
 
-    // --- WELCOME OVERLAY LOGIC ---
     document.getElementById('enter-btn').addEventListener('click', () => {
         const overlay = document.getElementById('welcome-overlay');
         overlay.style.opacity = '0'; 
