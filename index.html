@@ -11,81 +11,53 @@
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
     /* --- THE CINEMATIC MAP BLUR --- */
-    /* This targets the actual map imagery and animates it */
-    .mapboxgl-canvas {
-        transition: filter 0.5s ease !important;
+    .mapboxgl-canvas { transition: filter 0.5s ease !important; }
+    .map-dimmed { filter: blur(4px) brightness(0.4) !important; }
+
+    /* --- BRANDING WATERMARK --- */
+    .watermark {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        color: rgba(255, 255, 255, 0.6); /* Low opacity white */
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        text-shadow: 1px 1px 0px rgba(0,0,0,0.8); /* Ensures it's readable over light and dark map areas */
+        transition: color 0.2s, opacity 0.2s;
     }
-    .map-dimmed {
-        /* This creates the dark, frosted-glass vignette effect */
-        filter: blur(4px) brightness(0.4) !important; 
+    .watermark:hover {
+        color: #FF0000; /* Snaps to your brand red when hovered */
+        opacity: 1;
     }
 
     /* --- WELCOME OVERLAY STYLES --- */
     #welcome-overlay {
-        position: fixed;
-        top: 0; 
-        left: 0; 
-        width: 100%; 
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        z-index: 9999; 
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.85); z-index: 9999; 
+        display: flex; justify-content: center; align-items: center;
         transition: opacity 0.4s ease; 
     }
-
     .welcome-content {
-        background: #fff;
-        padding: 40px 30px;
-        border: 4px solid #FF0000;
-        box-shadow: 12px 12px 0px rgba(0,0,0,1);
-        text-align: center;
-        max-width: 320px;
+        background: #fff; padding: 40px 30px; border: 4px solid #FF0000;
+        box-shadow: 12px 12px 0px rgba(0,0,0,1); text-align: center; max-width: 320px;
     }
-
-    .welcome-title {
-        font-weight: 900;
-        text-transform: uppercase;
-        font-size: 26px;
-        margin-bottom: 10px;
-        color: #000;
-    }
-
-    .welcome-desc {
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 25px;
-        line-height: 1.5;
-    }
-
+    .welcome-title { font-weight: 900; text-transform: uppercase; font-size: 26px; margin-bottom: 10px; color: #000; }
+    .welcome-desc { font-size: 14px; color: #333; margin-bottom: 25px; line-height: 1.5; }
     .welcome-btn {
-        background: #FF0000;
-        color: #fff;
-        border: 2px solid #000;
-        padding: 12px 24px;
-        font-weight: 900;
-        text-transform: uppercase;
-        cursor: pointer;
-        font-size: 14px;
-        letter-spacing: 1px;
-        width: 100%;
-        transition: background 0.2s;
+        background: #FF0000; color: #fff; border: 2px solid #000; padding: 12px 24px;
+        font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 14px;
+        letter-spacing: 1px; width: 100%; transition: background 0.2s;
     }
-
-    .welcome-btn:hover {
-        background: #000;
-    }
+    .welcome-btn:hover { background: #000; }
 
     /* --- MAP UI STYLES --- */
     .filter-group {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        z-index: 10; /* Keeps filter above the blur */
-        background: #fff;
-        padding: 10px;
-        border: 2px solid #FF0000;
+        position: absolute; top: 20px; right: 20px; z-index: 10; 
+        background: #fff; padding: 10px; border: 2px solid #FF0000;
     }
 
     /* --- POPUP STYLES & ANIMATION --- */
@@ -94,20 +66,11 @@
         50% { margin-top: -10px; }
         100% { margin-top: 0px; }
     }
-
-    .mapboxgl-popup {
-        animation: floatPopup 3s ease-in-out infinite;
-        z-index: 20; /* Keeps it above the dimmed map */
-    }
-
+    .mapboxgl-popup { animation: floatPopup 3s ease-in-out infinite; z-index: 20; }
     .mapboxgl-popup-content {
-        padding: 15px;
-        border: 3px solid #FF0000;
-        border-radius: 0px; 
-        box-shadow: 8px 8px 0px rgba(0,0,0,0.8);
-        max-width: 280px;
+        padding: 15px; border: 3px solid #FF0000; border-radius: 0px; 
+        box-shadow: 8px 8px 0px rgba(0,0,0,0.8); max-width: 280px;
     }
-    
     .popup-title { font-weight: 900; text-transform: uppercase; font-size: 18px; margin-bottom: 2px; }
     .popup-meta { font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
     .popup-score { color: #FF0000; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
@@ -116,10 +79,7 @@
     .popup-take { font-size: 13px; line-height: 1.4; color: #333; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 8px; }
     
     .btn-container { display: flex; gap: 5px; }
-    .btn { 
-        flex: 1; text-align: center; padding: 8px; font-size: 10px; 
-        font-weight: bold; text-decoration: none; text-transform: uppercase;
-    }
+    .btn { flex: 1; text-align: center; padding: 8px; font-size: 10px; font-weight: bold; text-decoration: none; text-transform: uppercase; }
     .btn-black { background: #000; color: #fff; }
     .btn-outline { border: 1px solid #000; color: #000; }
 </style>
@@ -133,6 +93,8 @@
         <button class="welcome-btn" id="enter-btn">Explore the Map</button>
     </div>
 </div>
+
+<a href="https://instagram.com/grantwillian" target="_blank" class="watermark">Created by @grantwillian</a>
 
 <div id="map"></div>
 
@@ -160,6 +122,18 @@
         bearing: -15,
         antialias: true
     });
+
+    // --- NEW: QUALITY OF LIFE CONTROLS ---
+    // Adds a button to find the user's GPS location
+    map.addControl(new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserHeading: true
+    }), 'bottom-right');
+
+    // Adds standard zoom and compass rotate buttons
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
 
     // --- POPUP & CLICK LOGIC ---
     map.on('click', 'grantsentmemap', (e) => {
@@ -200,22 +174,18 @@
             </div>
         `;
 
-        // Create the popup
         const popup = new mapboxgl.Popup({ offset: 25 })
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
 
-        // TRIGGER THE FOCUS EFFECT
         const canvas = map.getCanvas();
         canvas.classList.add('map-dimmed');
 
-        // REMOVE THE FOCUS EFFECT WHEN POPUP CLOSES
         popup.on('close', () => {
             canvas.classList.remove('map-dimmed');
         });
 
-        // Center map & slide down for popup room
         map.flyTo({
             center: coordinates,
             speed: 0.6,
