@@ -10,6 +10,16 @@
     body { margin: 0; padding: 0; background-color: #000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
+    /* --- THE CINEMATIC MAP BLUR --- */
+    /* This targets the actual map imagery and animates it */
+    .mapboxgl-canvas {
+        transition: filter 0.5s ease !important;
+    }
+    .map-dimmed {
+        /* This creates the dark, frosted-glass vignette effect */
+        filter: blur(4px) brightness(0.4) !important; 
+    }
+
     /* --- WELCOME OVERLAY STYLES --- */
     #welcome-overlay {
         position: fixed;
@@ -72,25 +82,22 @@
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 1;
+        z-index: 10; /* Keeps filter above the blur */
         background: #fff;
         padding: 10px;
         border: 2px solid #FF0000;
     }
 
     /* --- POPUP STYLES & ANIMATION --- */
-    
-    /* This creates the continuous up-and-down hovering effect */
     @keyframes floatPopup {
         0% { margin-top: 0px; }
         50% { margin-top: -10px; }
         100% { margin-top: 0px; }
     }
 
-    /* Applies the hover animation to the whole popup including the little point tip */
     .mapboxgl-popup {
         animation: floatPopup 3s ease-in-out infinite;
-        z-index: 10; /* Keeps it above other map elements */
+        z-index: 20; /* Keeps it above the dimmed map */
     }
 
     .mapboxgl-popup-content {
@@ -159,20 +166,16 @@
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
 
-        // Safely grab the data
         const imgSource = props['Photo URL'] || props['Photo URL '];
         const socialLink = props['Social Link'] || props['IG Link'];
         const webLink = props['Link to their Website'];
         
-        // Grab the new columns
         const cuisine = props.Cuisine || '';
         const price = props.Price || '';
         const vibe = props.Vibe || '';
 
-        // Build the "Meta" string (e.g., "VIETNAMESE • $$")
         const metaText = [cuisine, price].filter(Boolean).join(' &bull; ');
 
-        // Clean up links to prevent 404s
         const formatLink = (link) => {
             if (!link) return null;
             let clean = link.trim();
@@ -183,15 +186,12 @@
 
         const html = `
             <div class="popup-title">${props.Name || 'Place Name'}</div>
-            
             ${metaText ? `<div class="popup-meta">${metaText}</div>` : ''}
-            
             <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
             
             ${imgSource ? `<img class="popup-img" src="${imgSource.trim()}" onerror="this.style.display='none'">` : ''}
             
             ${vibe ? `<div class="popup-vibe">Vibe: ${vibe}</div>` : ''}
-            
             <div class="popup-take">${props.Review || 'No review yet.'}</div>
             
             <div class="btn-container">
@@ -200,16 +200,25 @@
             </div>
         `;
 
-        new mapboxgl.Popup({ offset: 25 })
+        // Create the popup
+        const popup = new mapboxgl.Popup({ offset: 25 })
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
 
-        // NEW: Automatically center the map on the clicked point 
-        // We use an offset of [0, -120] to move the point down slightly, making room for the popup above it!
+        // TRIGGER THE FOCUS EFFECT
+        const canvas = map.getCanvas();
+        canvas.classList.add('map-dimmed');
+
+        // REMOVE THE FOCUS EFFECT WHEN POPUP CLOSES
+        popup.on('close', () => {
+            canvas.classList.remove('map-dimmed');
+        });
+
+        // Center map & slide down for popup room
         map.flyTo({
             center: coordinates,
-            speed: 0.6, // Adjust this to make the slide faster or slower
+            speed: 0.6,
             curve: 1, 
             offset: [0, -120],
             essential: true 
@@ -226,19 +235,14 @@
         }
     });
 
-    // --- CURSOR BEHAVIOR ---
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
 
     // --- WELCOME OVERLAY LOGIC ---
     document.getElementById('enter-btn').addEventListener('click', () => {
         const overlay = document.getElementById('welcome-overlay');
-        overlay.style.opacity = '0'; // Fades it out visually
-        
-        // Waits for the fade animation to finish, then removes it completely
-        setTimeout(() => { 
-            overlay.style.display = 'none'; 
-        }, 400); 
+        overlay.style.opacity = '0'; 
+        setTimeout(() => { overlay.style.display = 'none'; }, 400); 
     });
 
 </script>
