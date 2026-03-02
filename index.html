@@ -24,14 +24,25 @@
         border-radius: 18px;
     }
 
-    /* --- BRANDING WATERMARK --- */
-    .watermark {
+    /* --- BRANDING & INFO BUTTON --- */
+    .watermark-container {
         position: absolute; top: 20px; left: 20px; z-index: 10;
+        display: flex; gap: 8px; align-items: center; transition: top 0.3s ease;
+    }
+    .watermark {
         color: #fff; font-size: 11px; font-weight: 800;
         text-transform: uppercase; letter-spacing: 2px; text-decoration: none;
-        padding: 12px 18px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s;
+        padding: 12px 18px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .watermark:hover { color: var(--brand-red); transform: scale(1.03); }
+    
+    .info-btn {
+        width: 36px; height: 36px; border-radius: 50%;
+        color: #fff; font-family: "Georgia", serif; font-style: italic; font-weight: bold; font-size: 16px;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s ease;
+    }
+    .info-btn:hover { background: rgba(255, 255, 255, 0.15); transform: scale(1.05); }
 
     /* --- TOP BAR: SEARCH & DUAL FILTERS --- */
     .top-bar-container {
@@ -83,20 +94,22 @@
         text-shadow: 0 0 30px rgba(255,0,0,0.6); transition: transform 0.2s ease, color 0.2s ease;
     }
 
-    /* --- THE "BLACK CARD" WELCOME OVERLAY --- */
-    #welcome-overlay {
+    /* --- OVERLAYS: WELCOME & ABOUT --- */
+    .fullscreen-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         z-index: 99999; display: flex; justify-content: center; align-items: center;
-        transition: opacity 0.5s ease; padding: 20px; box-sizing: border-box;
+        transition: opacity 0.4s ease; padding: 20px; box-sizing: border-box;
     }
-    .welcome-content {
-        background: rgba(20, 20, 22, 0.85); padding: 50px 40px; border-radius: 32px;
+    .modal-content {
+        background: rgba(20, 20, 22, 0.85); padding: 40px 35px; border-radius: 32px;
         box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        text-align: center; max-width: 340px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+        text-align: center; max-width: 360px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+        position: relative;
     }
-    .welcome-title { font-weight: 900; text-transform: uppercase; font-size: 28px; margin-bottom: 12px; color: #fff; letter-spacing: -0.5px; }
-    .welcome-desc { font-size: 15px; color: #aaa; margin-bottom: 30px; line-height: 1.6; font-weight: 400; }
+    .modal-title { font-weight: 900; text-transform: uppercase; font-size: 28px; margin-bottom: 12px; color: #fff; letter-spacing: -0.5px; }
+    .modal-desc { font-size: 15px; color: #aaa; margin-bottom: 30px; line-height: 1.6; font-weight: 400; }
+    
     .welcome-btn {
         background: var(--brand-red); color: #fff; border: none; padding: 16px 30px;
         font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 14px;
@@ -104,6 +117,25 @@
         box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
     }
     .welcome-btn:hover { background: #e60000; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(255, 0, 0, 0.4); }
+
+    /* --- SPECIFIC ABOUT MODAL STYLING --- */
+    #about-overlay { display: none; opacity: 0; }
+    .close-modal {
+        position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1);
+        border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%;
+        font-size: 18px; cursor: pointer; transition: background 0.2s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .close-modal:hover { background: rgba(255,255,255,0.2); }
+    
+    .contributors-section { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px; margin-top: 25px; }
+    .contributors-title { font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.5); letter-spacing: 1.5px; margin-bottom: 15px; text-transform: uppercase; }
+    .contributor-card { background: rgba(0,0,0,0.3); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+    .contributor-name { font-weight: 800; color: #fff; font-size: 16px; margin-bottom: 4px; }
+    .contributor-role { font-size: 12px; color: var(--brand-red); font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;}
+    .contributor-links a { color: #888; text-decoration: none; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; transition: color 0.2s; }
+    .contributor-links a:hover { color: #fff; }
+    .contributor-links span { color: rgba(255,255,255,0.2); margin: 0 8px; }
 
     /* --- THE CINEMATIC MAP BLUR --- */
     .mapboxgl-canvas { transition: filter 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important; }
@@ -124,11 +156,9 @@
     .popup-meta { font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
     .popup-score { color: var(--brand-red); font-weight: 900; font-size: 15px; margin-bottom: 14px; }
     
-    /* Image Header Wrapper for Share Button */
     .popup-img-wrapper { position: relative; width: 100%; height: 200px; }
     .popup-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     
-    /* Share Button */
     .share-btn {
         position: absolute; top: 15px; right: 15px; z-index: 10;
         background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);
@@ -139,7 +169,6 @@
     .share-btn:hover { background: #fff; transform: scale(1.1); }
     .share-icon { width: 16px; height: 16px; fill: #111; }
     
-    /* Copied Toast */
     .copied-toast {
         position: absolute; top: 55px; right: 15px; z-index: 10;
         background: var(--brand-red); color: #fff; font-size: 10px; font-weight: 800;
@@ -167,14 +196,14 @@
         }
         #search-input { width: 100%; font-size: 14px; margin-bottom: 5px; text-align: center; }
         #search-input:focus { width: 100%; }
-        .divider { display: none; } /* Hide dividers on mobile for a cleaner stack */
+        .divider { display: none; }
         .filter-container { flex: 1; display: flex; justify-content: center; }
         .custom-select { width: 100%; text-align: center; font-size: 12px; }
-        .watermark { top: 110px; left: 15px; padding: 10px 14px; }
+        .watermark-container { top: 110px; left: 15px; }
         .mapboxgl-popup-content { width: 280px; } 
         .popup-img-wrapper { height: 160px; } 
-        .welcome-content { padding: 40px 25px; }
-        .welcome-title { font-size: 24px; }
+        .modal-content { padding: 40px 25px; }
+        .modal-title { font-size: 24px; }
         #slot-text { font-size: 38px; }
         .surprise-btn { bottom: 30px; width: 80%; padding: 16px; text-align: center; }
     }
@@ -182,11 +211,34 @@
 </head>
 <body>
 
-<div id="welcome-overlay">
-    <div class="welcome-content">
-        <div class="welcome-title">Grant's Picks</div>
-        <div class="welcome-desc">A highly curated, no-bs guide to the best spots in the city. Good food, good drinks, good vibes only.</div>
+<div id="welcome-overlay" class="fullscreen-overlay">
+    <div class="modal-content">
+        <div class="modal-title">Grant's Picks</div>
+        <div class="modal-desc">A highly curated, no-bs guide to the best spots in the city. Good food, good drinks, good vibes only.</div>
         <button class="welcome-btn" id="enter-btn">Explore the Map</button>
+    </div>
+</div>
+
+<div id="about-overlay" class="fullscreen-overlay">
+    <div class="modal-content">
+        <button class="close-modal" id="close-about-btn">&times;</button>
+        <div class="modal-title">Grant's Picks</div>
+        <div class="modal-desc" style="font-size: 14px; margin-bottom: 15px;">
+            Every spot on this map has been personally vetted, taste-tested, and vibe-checked to ensure you never waste a meal in NYC. No fluff, no sponsored BS—just the absolute best.
+        </div>
+        
+        <div class="contributors-section">
+            <div class="contributors-title">Key Contributors</div>
+            <div class="contributor-card">
+                <div class="contributor-name">[Intern Name]</div>
+                <div class="contributor-role">Archival & Data Curator</div>
+                <div class="contributor-links">
+                    <a href="https://instagram.com/her-handle" target="_blank">Instagram</a>
+                    <span>&bull;</span>
+                    <a href="https://her-portfolio-link.com" target="_blank">Portfolio</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -194,7 +246,10 @@
     <div id="slot-text">SPINNING...</div>
 </div>
 
-<a href="https://instagram.com/grantwillian" target="_blank" class="watermark glass-ui">@grantwillian</a>
+<div class="watermark-container">
+    <a href="https://instagram.com/grantwillian" target="_blank" class="watermark glass-ui">@grantwillian</a>
+    <button id="about-btn" class="info-btn glass-ui">i</button>
+</div>
 
 <div class="top-bar-container glass-ui">
     <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
@@ -232,6 +287,29 @@
 <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
     
+    // --- ABOUT MODAL LOGIC ---
+    const aboutBtn = document.getElementById('about-btn');
+    const aboutOverlay = document.getElementById('about-overlay');
+    const closeAboutBtn = document.getElementById('close-about-btn');
+
+    aboutBtn.addEventListener('click', () => {
+        aboutOverlay.style.display = 'flex';
+        setTimeout(() => { aboutOverlay.style.opacity = '1'; }, 10);
+    });
+
+    closeAboutBtn.addEventListener('click', () => {
+        aboutOverlay.style.opacity = '0';
+        setTimeout(() => { aboutOverlay.style.display = 'none'; }, 400);
+    });
+
+    // Close on clicking the dark background outside the card
+    aboutOverlay.addEventListener('click', (e) => {
+        if(e.target === aboutOverlay) {
+            aboutOverlay.style.opacity = '0';
+            setTimeout(() => { aboutOverlay.style.display = 'none'; }, 400);
+        }
+    });
+
     // --- GLOBAL COPY FUNCTION FOR SHARE BUTTON ---
     window.copyToClipboard = function(url, btnElement) {
         navigator.clipboard.writeText(url).then(() => {
@@ -404,7 +482,6 @@
 
         // 2. Wait for the zoom to finish, then trigger the slot machine
         setTimeout(() => {
-            // Grab currently visible/rendered spots from the custom layer
             const features = map.queryRenderedFeatures({ layers: ['grantsentmemap'] });
             
             if (features.length === 0) {
@@ -412,47 +489,40 @@
                 return;
             }
 
-            // Show the frosted glass overlay
             const overlay = document.getElementById('slot-overlay');
             const slotText = document.getElementById('slot-text');
             overlay.classList.add('active');
 
             let spins = 0;
-            const maxSpins = 25; // Total number of name flashes
-            let spinInterval = 40; // Starting speed (fast)
+            const maxSpins = 25; 
+            let spinInterval = 40; 
             let winnerFeature;
 
             const spin = () => {
-                // Pick a random spot from the array
                 winnerFeature = features[Math.floor(Math.random() * features.length)];
                 slotText.innerText = winnerFeature.properties.Name || "MYSTERY SPOT";
                 
                 spins++;
                 if (spins < maxSpins) {
-                    spinInterval += 6; // Gradually slow down the flashes
+                    spinInterval += 6; 
                     setTimeout(spin, spinInterval);
                 } else {
-                    // Winner locked in! Flashes red.
                     slotText.style.color = "var(--brand-red)";
                     slotText.style.transform = "scale(1.15)";
                     
                     setTimeout(() => {
-                        // Fade out overlay
                         overlay.classList.remove('active');
-                        // Reset text state for next time
                         setTimeout(() => { 
                             slotText.style.color = "#fff"; 
                             slotText.style.transform = "scale(1)"; 
                         }, 300);
-                        
-                        // Fire the popup (which automatically triggers the cinematic swoop)
                         triggerPopup(winnerFeature);
                     }, 1200);
                 }
             };
-            spin(); // Start the roulette
+            spin(); 
 
-        }, 1000); // 1-second delay lets the camera zoom out first
+        }, 1000); 
     });
 
     // --- UNIFIED DUAL-FILTER & SEARCH LOGIC ---
@@ -463,38 +533,29 @@
     function updateFilters() {
         const filters = ['all']; 
         
-        // 1. Filter by Category (exact match)
         if (currentCategory !== 'all') {
             filters.push(['==', ['downcase', ['get', 'Category']], currentCategory.toLowerCase()]);
         }
-        
-        // 2. Filter by Vibe (searches inside the string, so "Cozy, Date Night" works)
         if (currentVibe !== 'all') {
             filters.push(['in', currentVibe, ['downcase', ['coalesce', ['get', 'Vibe'], '']]]);
         }
-
-        // 3. Filter by Name Search
         if (currentSearch !== '') {
             filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['coalesce', ['get', 'Name'], '']]]);
         }
         
         const finalFilter = filters.length > 1 ? filters : null;
-        
         map.setFilter('grantsentmemap', finalFilter);
         if (map.getLayer('pulse-layer')) {
             map.setFilter('pulse-layer', finalFilter);
         }
     }
 
-    // Listeners for all three inputs
     document.getElementById('category-select').addEventListener('change', (e) => {
         currentCategory = e.target.value; updateFilters();
     });
-
     document.getElementById('vibe-select').addEventListener('change', (e) => {
         currentVibe = e.target.value; updateFilters();
     });
-
     document.getElementById('search-input').addEventListener('input', (e) => {
         currentSearch = e.target.value; updateFilters();
     });
@@ -505,7 +566,7 @@
     document.getElementById('enter-btn').addEventListener('click', () => {
         const overlay = document.getElementById('welcome-overlay');
         overlay.style.opacity = '0'; 
-        setTimeout(() => { overlay.style.display = 'none'; }, 500); 
+        setTimeout(() => { overlay.style.display = 'none'; }, 400); 
     });
 </script>
 </body>
