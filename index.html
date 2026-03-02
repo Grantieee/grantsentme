@@ -52,11 +52,11 @@
 
     .filter-container { display: flex; align-items: center; }
     .filter-label { color: rgba(255,255,255,0.5); font-weight: 800; font-size: 10px; margin-right: 8px; letter-spacing: 1.5px; }
-    #category-select {
+    #vibe-select {
         background: transparent; color: #fff; border: none; font-weight: 700;
         font-size: 13px; font-family: inherit; cursor: pointer; outline: none; letter-spacing: 0.5px;
     }
-    #category-select option { background: #1c1c1e; color: #fff; }
+    #vibe-select option { background: #1c1c1e; color: #fff; }
 
     /* --- SURPRISE ME (SLOT MACHINE) BUTTON --- */
     .surprise-btn {
@@ -195,14 +195,15 @@
     </div>
     <div class="divider"></div>
     <div class="filter-container">
-        <span class="filter-label">FILTER</span>
-        <select id="category-select">
-            <option value="all">Show All</option>
-            <option value="Restaurant">Restaurants</option>
-            <option value="Bakery/Cafe">Bakeries</option>
-            <option value="Bar/Speakeasy">Bars</option>
-            <option value="Street Food">Street Food</option>
-            <option value="Shop">Shops</option>
+        <span class="filter-label">VIBE</span>
+        <select id="vibe-select">
+            <option value="all">Any Vibe</option>
+            <option value="cozy">Cozy</option>
+            <option value="small">Small</option>
+            <option value="unique">Unique</option>
+            <option value="date night">Date Night</option>
+            <option value="aesthetic">Aesthetic</option>
+            <option value="lively">Lively</option>
         </select>
     </div>
 </div>
@@ -242,17 +243,10 @@
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     map.on('load', () => {
-        // Dynamic Light Engine
-        const currentHour = new Date().getHours();
-        let fogColor, bldgColor;
-        if (currentHour >= 6 && currentHour < 9) { fogColor = '#4a5568'; bldgColor = '#1a1c23'; } 
-        else if (currentHour >= 9 && currentHour < 17) { fogColor = '#718096'; bldgColor = '#2d3748'; } 
-        else if (currentHour >= 17 && currentHour < 20) { fogColor = '#ff5e62'; bldgColor = '#2a1715'; } 
-        else { fogColor = '#050505'; bldgColor = '#0a0a0a'; }
+        // --- MIDNIGHT FOG & SKY ---
+        map.setFog({ 'range': [0.5, 8], 'color': '#050505', 'horizon-blend': 0.1 });
 
-        map.setFog({ 'range': [0.5, 8], 'color': fogColor, 'horizon-blend': 0.1 });
-
-        // 3D Buildings
+        // --- OBSIDIAN 3D BUILDINGS ---
         if (!map.getSource('composite')) {
             map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
         }
@@ -273,14 +267,14 @@
             'type': 'fill-extrusion',
             'minzoom': 14,
             'paint': {
-                'fill-extrusion-color': bldgColor, 
+                'fill-extrusion-color': '#0a0a0a', 
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-base': ['get', 'min_height'],
                 'fill-extrusion-opacity': 0.9 
             }
         }, labelLayerId);
 
-        // Premium Radar Pulse
+        // --- PREMIUM RADAR PULSE ---
         const existingLayer = map.getLayer('grantsentmemap');
         if (existingLayer) {
             map.addLayer({
@@ -305,47 +299,35 @@
         }
     });
 
-    // --- 8-SECOND IDLE SCREENSAVER LOGIC ---
+    // --- DRONE ORBIT ANIMATION LOGIC ---
     let spinFrame;
     let isOrbiting = false;
-    let idleTimer;
-    const IDLE_TIME = 8000; 
 
     function spinGlobe() {
         if (!isOrbiting) return;
-        map.setBearing(map.getBearing() + 0.04); 
+        const currentBearing = map.getBearing();
+        map.setBearing(currentBearing + 0.05); // Spin speed
         spinFrame = requestAnimationFrame(spinGlobe);
-    }
-
-    function startIdleSpin() {
-        if (!isOrbiting) { isOrbiting = true; spinGlobe(); }
     }
 
     function stopSpinning() {
         isOrbiting = false;
-        if (spinFrame) { cancelAnimationFrame(spinFrame); spinFrame = null; }
-    }
-
-    function resetIdleTimer() {
-        stopSpinning(); 
-        clearTimeout(idleTimer);
-        const overlay = document.getElementById('welcome-overlay');
-        const slotOverlay = document.getElementById('slot-overlay');
-        if (overlay.style.display === 'none' && !slotOverlay.classList.contains('active')) {
-            idleTimer = setTimeout(startIdleSpin, IDLE_TIME);
+        if (spinFrame) {
+            cancelAnimationFrame(spinFrame);
+            spinFrame = null;
         }
     }
 
-    ['mousedown','mousemove','touchstart','touchmove','wheel','dragstart','zoomstart','pitchstart'].forEach(evt => map.on(evt, resetIdleTimer));
-    document.getElementById('search-input').addEventListener('input', resetIdleTimer);
-    document.getElementById('search-input').addEventListener('focus', resetIdleTimer);
-    document.getElementById('category-select').addEventListener('change', resetIdleTimer);
+    // Stop spinning if the user interrupts the map
+    map.on('dragstart', stopSpinning);
+    map.on('touchstart', stopSpinning);
+    map.on('zoomstart', stopSpinning);
 
     // --- CENTRALIZED POPUP LOGIC ---
     let currentPopup = null;
 
     function triggerPopup(feature) {
-        resetIdleTimer(); 
+        stopSpinning(); // Stop any current spin
 
         const props = feature.properties;
         const coordinates = feature.geometry.coordinates.slice();
@@ -405,11 +387,20 @@
         
         currentPopup.on('close', () => { 
             canvas.classList.remove('map-dimmed'); 
+            stopSpinning(); 
             currentPopup = null;
         });
 
         // The swooping animation
         map.flyTo({ center: coordinates, speed: 0.8, curve: 1, pitch: 72, offset: [0, -100], essential: true });
+
+        // Once landed, begin the orbit
+        map.once('moveend', () => {
+            if (currentPopup && currentPopup.isOpen()) {
+                isOrbiting = true;
+                spinGlobe();
+            }
+        });
     }
 
     // Direct Map Click Listener
@@ -417,7 +408,6 @@
 
     // --- ROULETTE / SURPRISE ME LOGIC ---
     document.getElementById('surprise-btn').addEventListener('click', () => {
-        resetIdleTimer();
         if (currentPopup) currentPopup.remove();
 
         // 1. Zoom out quickly to grab more nearby locations on the map
@@ -476,18 +466,22 @@
         }, 1000); // 1-second delay lets the camera zoom out first
     });
 
-    // --- UNIFIED SEARCH & FILTER LOGIC ---
-    let currentCategory = 'all';
+    // --- UNIFIED SEARCH & VIBE FILTER LOGIC ---
+    let currentVibe = 'all';
     let currentSearch = '';
 
     function updateFilters() {
         const filters = ['all']; 
-        if (currentCategory !== 'all') {
-            filters.push(['==', ['downcase', ['get', 'Category']], currentCategory.toLowerCase()]);
+        
+        // Match string inside the Vibe property (handles commas seamlessly)
+        if (currentVibe !== 'all') {
+            filters.push(['in', currentVibe, ['downcase', ['coalesce', ['get', 'Vibe'], '']]]);
         }
+        
         if (currentSearch !== '') {
-            filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['get', 'Name']]]);
+            filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['coalesce', ['get', 'Name'], '']]]);
         }
+        
         const finalFilter = filters.length > 1 ? filters : null;
         
         map.setFilter('grantsentmemap', finalFilter);
@@ -496,12 +490,14 @@
         }
     }
 
-    document.getElementById('category-select').addEventListener('change', (e) => {
-        currentCategory = e.target.value; updateFilters();
+    document.getElementById('vibe-select').addEventListener('change', (e) => {
+        currentVibe = e.target.value.toLowerCase(); 
+        updateFilters();
     });
 
     document.getElementById('search-input').addEventListener('input', (e) => {
-        currentSearch = e.target.value; updateFilters();
+        currentSearch = e.target.value; 
+        updateFilters();
     });
 
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
@@ -510,7 +506,7 @@
     document.getElementById('enter-btn').addEventListener('click', () => {
         const overlay = document.getElementById('welcome-overlay');
         overlay.style.opacity = '0'; 
-        setTimeout(() => { overlay.style.display = 'none'; resetIdleTimer(); }, 500); 
+        setTimeout(() => { overlay.style.display = 'none'; }, 500); 
     });
 </script>
 </body>
