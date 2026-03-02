@@ -33,30 +33,30 @@
     }
     .watermark:hover { color: var(--brand-red); transform: scale(1.03); }
 
-    /* --- TOP BAR: SEARCH & FILTER --- */
+    /* --- TOP BAR: SEARCH & DUAL FILTERS --- */
     .top-bar-container {
         position: absolute; top: 20px; right: 20px; z-index: 10; 
-        display: flex; align-items: center; padding: 8px 16px; gap: 16px;
-        transition: all 0.3s ease;
+        display: flex; align-items: center; padding: 8px 16px; gap: 12px;
+        transition: all 0.3s ease; flex-wrap: wrap; justify-content: flex-end;
     }
     .search-container { display: flex; align-items: center; }
     #search-input {
         background: transparent; border: none; color: #fff; outline: none;
-        font-family: inherit; font-size: 14px; font-weight: 500; width: 150px;
+        font-family: inherit; font-size: 14px; font-weight: 500; width: 140px;
         transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     #search-input::placeholder { color: rgba(255,255,255,0.5); font-weight: 500; }
-    #search-input:focus { width: 200px; } 
+    #search-input:focus { width: 180px; } 
 
     .divider { width: 1px; height: 20px; background: rgba(255,255,255,0.15); }
 
     .filter-container { display: flex; align-items: center; }
-    .filter-label { color: rgba(255,255,255,0.5); font-weight: 800; font-size: 10px; margin-right: 8px; letter-spacing: 1.5px; }
-    #vibe-select {
+    .custom-select {
         background: transparent; color: #fff; border: none; font-weight: 700;
         font-size: 13px; font-family: inherit; cursor: pointer; outline: none; letter-spacing: 0.5px;
+        text-transform: uppercase;
     }
-    #vibe-select option { background: #1c1c1e; color: #fff; }
+    .custom-select option { background: #1c1c1e; color: #fff; text-transform: none; }
 
     /* --- SURPRISE ME (SLOT MACHINE) BUTTON --- */
     .surprise-btn {
@@ -159,11 +159,18 @@
     .btn-outline { background: #f0f0f0; color: #000; }
 
     /* --- IPHONE / MOBILE RESPONSIVENESS --- */
-    @media (max-width: 600px) {
-        .top-bar-container { top: 15px; right: 15px; left: 15px; justify-content: space-between; padding: 10px 14px; }
-        #search-input { width: 110px; font-size: 13px; }
-        #search-input:focus { width: 140px; }
-        .watermark { top: 75px; left: 15px; padding: 10px 14px; }
+    @media (max-width: 700px) {
+        .top-bar-container { 
+            top: 15px; right: 15px; left: 15px; 
+            justify-content: space-between; padding: 10px; 
+            gap: 10px;
+        }
+        #search-input { width: 100%; font-size: 14px; margin-bottom: 5px; text-align: center; }
+        #search-input:focus { width: 100%; }
+        .divider { display: none; } /* Hide dividers on mobile for a cleaner stack */
+        .filter-container { flex: 1; display: flex; justify-content: center; }
+        .custom-select { width: 100%; text-align: center; font-size: 12px; }
+        .watermark { top: 110px; left: 15px; padding: 10px 14px; }
         .mapboxgl-popup-content { width: 280px; } 
         .popup-img-wrapper { height: 160px; } 
         .welcome-content { padding: 40px 25px; }
@@ -190,13 +197,23 @@
 <a href="https://instagram.com/grantwillian" target="_blank" class="watermark glass-ui">@grantwillian</a>
 
 <div class="top-bar-container glass-ui">
-    <div class="search-container">
+    <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
         <input type="text" id="search-input" placeholder="Search a spot..." autocomplete="off">
     </div>
     <div class="divider"></div>
     <div class="filter-container">
-        <span class="filter-label">VIBE</span>
-        <select id="vibe-select">
+        <select id="category-select" class="custom-select">
+            <option value="all">Any Type</option>
+            <option value="Restaurant">Restaurants</option>
+            <option value="Bakery/Cafe">Bakeries</option>
+            <option value="Bar/Speakeasy">Bars</option>
+            <option value="Street Food">Street Food</option>
+            <option value="Shop">Shops</option>
+        </select>
+    </div>
+    <div class="divider"></div>
+    <div class="filter-container">
+        <select id="vibe-select" class="custom-select">
             <option value="all">Any Vibe</option>
             <option value="cozy">Cozy</option>
             <option value="small">Small</option>
@@ -243,10 +260,17 @@
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     map.on('load', () => {
-        // --- MIDNIGHT FOG & SKY ---
-        map.setFog({ 'range': [0.5, 8], 'color': '#050505', 'horizon-blend': 0.1 });
+        // Dynamic Light Engine
+        const currentHour = new Date().getHours();
+        let fogColor, bldgColor;
+        if (currentHour >= 6 && currentHour < 9) { fogColor = '#4a5568'; bldgColor = '#1a1c23'; } 
+        else if (currentHour >= 9 && currentHour < 17) { fogColor = '#718096'; bldgColor = '#2d3748'; } 
+        else if (currentHour >= 17 && currentHour < 20) { fogColor = '#ff5e62'; bldgColor = '#2a1715'; } 
+        else { fogColor = '#050505'; bldgColor = '#0a0a0a'; }
 
-        // --- OBSIDIAN 3D BUILDINGS ---
+        map.setFog({ 'range': [0.5, 8], 'color': fogColor, 'horizon-blend': 0.1 });
+
+        // 3D Buildings
         if (!map.getSource('composite')) {
             map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
         }
@@ -267,14 +291,14 @@
             'type': 'fill-extrusion',
             'minzoom': 14,
             'paint': {
-                'fill-extrusion-color': '#0a0a0a', 
+                'fill-extrusion-color': bldgColor, 
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-base': ['get', 'min_height'],
                 'fill-extrusion-opacity': 0.9 
             }
         }, labelLayerId);
 
-        // --- PREMIUM RADAR PULSE ---
+        // Premium Radar Pulse
         const existingLayer = map.getLayer('grantsentmemap');
         if (existingLayer) {
             map.addLayer({
@@ -299,36 +323,10 @@
         }
     });
 
-    // --- DRONE ORBIT ANIMATION LOGIC ---
-    let spinFrame;
-    let isOrbiting = false;
-
-    function spinGlobe() {
-        if (!isOrbiting) return;
-        const currentBearing = map.getBearing();
-        map.setBearing(currentBearing + 0.05); // Spin speed
-        spinFrame = requestAnimationFrame(spinGlobe);
-    }
-
-    function stopSpinning() {
-        isOrbiting = false;
-        if (spinFrame) {
-            cancelAnimationFrame(spinFrame);
-            spinFrame = null;
-        }
-    }
-
-    // Stop spinning if the user interrupts the map
-    map.on('dragstart', stopSpinning);
-    map.on('touchstart', stopSpinning);
-    map.on('zoomstart', stopSpinning);
-
     // --- CENTRALIZED POPUP LOGIC ---
     let currentPopup = null;
 
     function triggerPopup(feature) {
-        stopSpinning(); // Stop any current spin
-
         const props = feature.properties;
         const coordinates = feature.geometry.coordinates.slice();
 
@@ -387,20 +385,11 @@
         
         currentPopup.on('close', () => { 
             canvas.classList.remove('map-dimmed'); 
-            stopSpinning(); 
             currentPopup = null;
         });
 
         // The swooping animation
         map.flyTo({ center: coordinates, speed: 0.8, curve: 1, pitch: 72, offset: [0, -100], essential: true });
-
-        // Once landed, begin the orbit
-        map.once('moveend', () => {
-            if (currentPopup && currentPopup.isOpen()) {
-                isOrbiting = true;
-                spinGlobe();
-            }
-        });
     }
 
     // Direct Map Click Listener
@@ -466,18 +455,25 @@
         }, 1000); // 1-second delay lets the camera zoom out first
     });
 
-    // --- UNIFIED SEARCH & VIBE FILTER LOGIC ---
+    // --- UNIFIED DUAL-FILTER & SEARCH LOGIC ---
+    let currentCategory = 'all';
     let currentVibe = 'all';
     let currentSearch = '';
 
     function updateFilters() {
         const filters = ['all']; 
         
-        // Match string inside the Vibe property (handles commas seamlessly)
+        // 1. Filter by Category (exact match)
+        if (currentCategory !== 'all') {
+            filters.push(['==', ['downcase', ['get', 'Category']], currentCategory.toLowerCase()]);
+        }
+        
+        // 2. Filter by Vibe (searches inside the string, so "Cozy, Date Night" works)
         if (currentVibe !== 'all') {
             filters.push(['in', currentVibe, ['downcase', ['coalesce', ['get', 'Vibe'], '']]]);
         }
-        
+
+        // 3. Filter by Name Search
         if (currentSearch !== '') {
             filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['coalesce', ['get', 'Name'], '']]]);
         }
@@ -490,14 +486,17 @@
         }
     }
 
+    // Listeners for all three inputs
+    document.getElementById('category-select').addEventListener('change', (e) => {
+        currentCategory = e.target.value; updateFilters();
+    });
+
     document.getElementById('vibe-select').addEventListener('change', (e) => {
-        currentVibe = e.target.value.toLowerCase(); 
-        updateFilters();
+        currentVibe = e.target.value; updateFilters();
     });
 
     document.getElementById('search-input').addEventListener('input', (e) => {
-        currentSearch = e.target.value; 
-        updateFilters();
+        currentSearch = e.target.value; updateFilters();
     });
 
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
