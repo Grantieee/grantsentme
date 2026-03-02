@@ -7,21 +7,31 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js"></script>
 <style>
-    body { margin: 0; padding: 0; background-color: #000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    :root {
+        --brand-red: #FF0000;
+        --ios-blur: blur(15px);
+    }
+    body { margin: 0; padding: 0; background-color: #000; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-    /* --- THE CINEMATIC MAP BLUR --- */
-    .mapboxgl-canvas { transition: filter 0.5s ease !important; }
-    .map-dimmed { filter: blur(4px) brightness(0.4) !important; }
+    /* --- APPLE-STYLE GLASS UI --- */
+    .glass-ui {
+        background: rgba(28, 28, 30, 0.6);
+        backdrop-filter: var(--ios-blur);
+        -webkit-backdrop-filter: var(--ios-blur);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
 
     /* --- BRANDING WATERMARK --- */
     .watermark {
         position: absolute; top: 20px; left: 20px; z-index: 10;
-        color: rgba(255, 255, 255, 0.6); font-size: 11px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1px; text-decoration: none;
-        text-shadow: 1px 1px 0px rgba(0,0,0,0.8); transition: color 0.2s, opacity 0.2s;
+        color: #fff; font-size: 11px; font-weight: 800;
+        text-transform: uppercase; letter-spacing: 1.5px; text-decoration: none;
+        padding: 10px 16px; transition: transform 0.2s ease, color 0.2s;
     }
-    .watermark:hover { color: #FF0000; opacity: 1; }
+    .watermark:hover { color: var(--brand-red); transform: scale(1.02); }
 
     /* --- WELCOME OVERLAY STYLES --- */
     #welcome-overlay {
@@ -31,46 +41,57 @@
         transition: opacity 0.4s ease; 
     }
     .welcome-content {
-        background: #fff; padding: 40px 30px; border: 4px solid #FF0000;
-        box-shadow: 12px 12px 0px rgba(0,0,0,1); text-align: center; max-width: 320px;
+        background: #fff; padding: 40px 30px; border-radius: 24px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5); text-align: center; max-width: 320px;
+        border: 2px solid rgba(0,0,0,0.1);
     }
-    .welcome-title { font-weight: 900; text-transform: uppercase; font-size: 26px; margin-bottom: 10px; color: #000; }
-    .welcome-desc { font-size: 14px; color: #333; margin-bottom: 25px; line-height: 1.5; }
+    .welcome-title { font-weight: 900; text-transform: uppercase; font-size: 26px; margin-bottom: 10px; color: #000; letter-spacing: -0.5px; }
+    .welcome-desc { font-size: 14px; color: #555; margin-bottom: 25px; line-height: 1.5; font-weight: 500; }
     .welcome-btn {
-        background: #FF0000; color: #fff; border: 2px solid #000; padding: 12px 24px;
+        background: var(--brand-red); color: #fff; border: none; padding: 14px 24px;
         font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 14px;
-        letter-spacing: 1px; width: 100%; transition: background 0.2s;
+        letter-spacing: 1px; width: 100%; border-radius: 12px; transition: transform 0.2s, background 0.2s;
     }
-    .welcome-btn:hover { background: #000; }
+    .welcome-btn:hover { background: #cc0000; transform: translateY(-2px); }
 
     /* --- MAP UI STYLES --- */
     .filter-group {
         position: absolute; top: 20px; right: 20px; z-index: 10; 
-        background: #fff; padding: 10px; border: 2px solid #FF0000;
+        padding: 8px 12px; display: flex; align-items: center;
     }
+    .filter-label { color: #fff; font-weight: 800; font-size: 11px; margin-right: 6px; letter-spacing: 1px; }
+    #category-select {
+        background: transparent; color: #fff; border: none; font-weight: 700;
+        font-size: 12px; font-family: inherit; cursor: pointer; outline: none;
+    }
+    #category-select option { background: #1c1c1e; color: #fff; }
 
-    /* --- POPUP STYLES & ANIMATION --- */
-    @keyframes floatPopup {
-        0% { margin-top: 0px; }
-        50% { margin-top: -10px; }
-        100% { margin-top: 0px; }
-    }
-    .mapboxgl-popup { animation: floatPopup 3s ease-in-out infinite; z-index: 20; }
+    /* --- THE CINEMATIC MAP BLUR --- */
+    .mapboxgl-canvas { transition: filter 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important; }
+    .map-dimmed { filter: blur(8px) brightness(0.3) !important; }
+
+    /* GPS BUTTON FIX FOR DARK MODE */
+    .mapboxgl-ctrl-group { background: rgba(28, 28, 30, 0.7) !important; backdrop-filter: var(--ios-blur); border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 10px !important; overflow: hidden; }
+    .mapboxgl-ctrl-icon { filter: invert(1); }
+
+    /* --- PREMIUM POPUP STYLES --- */
     .mapboxgl-popup-content {
-        padding: 15px; border: 3px solid #FF0000; border-radius: 0px; 
-        box-shadow: 8px 8px 0px rgba(0,0,0,0.8); max-width: 280px;
+        padding: 0; background: #fff; border-radius: 20px; overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5); width: 280px; border: none;
     }
-    .popup-title { font-weight: 900; text-transform: uppercase; font-size: 18px; margin-bottom: 2px; }
-    .popup-meta { font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
-    .popup-score { color: #FF0000; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
-    .popup-img { width: 100%; height: auto; border: 1px solid #000; margin: 8px 0; display: block; }
-    .popup-vibe { font-size: 12px; font-style: italic; color: #555; margin-bottom: 8px; }
-    .popup-take { font-size: 13px; line-height: 1.4; color: #333; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 8px; }
+    .popup-inner { padding: 18px; }
+    .popup-title { font-weight: 900; text-transform: uppercase; font-size: 20px; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .popup-meta { font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+    .popup-score { color: var(--brand-red); font-weight: 900; font-size: 14px; margin-bottom: 12px; }
+    .popup-img { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .popup-vibe { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 8px; background: #f4f4f4; padding: 6px 10px; border-radius: 6px; display: inline-block; }
+    .popup-take { font-size: 13px; line-height: 1.5; color: #222; margin-bottom: 12px; padding-top: 8px; }
     
-    .btn-container { display: flex; gap: 5px; }
-    .btn { flex: 1; text-align: center; padding: 8px; font-size: 10px; font-weight: bold; text-decoration: none; text-transform: uppercase; }
+    .btn-container { display: flex; gap: 8px; padding: 0 18px 18px 18px; }
+    .btn { flex: 1; text-align: center; padding: 10px; font-size: 11px; font-weight: 800; text-decoration: none; text-transform: uppercase; border-radius: 10px; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.8; }
     .btn-black { background: #000; color: #fff; }
-    .btn-outline { border: 1px solid #000; color: #000; }
+    .btn-outline { background: #f4f4f4; color: #000; }
 </style>
 </head>
 <body>
@@ -83,21 +104,21 @@
     </div>
 </div>
 
-<a href="https://instagram.com/grantwillian" target="_blank" class="watermark">Created by @grantwillian</a>
+<a href="https://instagram.com/grantwillian" target="_blank" class="watermark glass-ui">@grantwillian</a>
 
-<div id="map"></div>
-
-<div class="filter-group">
-    <label style="font-weight:bold; font-size:12px;">FILTER: </label>
-    <select id="category-select" style="border:none; outline:none; font-family:inherit; cursor:pointer;">
+<div class="filter-group glass-ui">
+    <span class="filter-label">FILTER:</span>
+    <select id="category-select">
         <option value="all">Show All</option>
-        <option value="Restaurant">Restaurant</option>
-        <option value="Bakery/Cafe">Bakery/Cafe</option>
-        <option value="Bar/Speakeasy">Bar/Speakeasy</option>
+        <option value="Restaurant">Restaurants</option>
+        <option value="Bakery/Cafe">Bakeries</option>
+        <option value="Bar/Speakeasy">Bars</option>
         <option value="Street Food">Street Food</option>
-        <option value="Shop">Shop</option>
+        <option value="Shop">Shops</option>
     </select>
 </div>
+
+<div id="map"></div>
 
 <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
@@ -119,50 +140,65 @@
     }), 'bottom-right');
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
-    // --- NEW: THE RADAR PULSE LOGIC ---
-    // We wait for the map to fully load, then inject a new animated layer underneath your triangles
     map.on('load', () => {
-        const existingLayer = map.getLayer('grantsentmemap');
+        // --- 1. ADD CINEMATIC FOG ---
+        map.setFog({ 'range': [0.5, 10], 'color': '#000', 'horizon-blend': 0.05 });
+
+        // --- 2. ADD 3D BUILDINGS ---
+        // We pull the default Mapbox building source and overlay it on your custom style
+        if (!map.getSource('composite')) {
+            map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
+        }
         
+        const layers = map.getStyle().layers;
+        let labelLayerId;
+        for (let i = 0; i < layers.length; i++) {
+            if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                labelLayerId = layers[i].id; break;
+            }
+        }
+
+        map.addLayer({
+            'id': '3d-buildings',
+            'source': 'composite',
+            'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
+            'type': 'fill-extrusion',
+            'minzoom': 14,
+            'paint': {
+                'fill-extrusion-color': '#1a1a1a', // Dark buildings
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': ['get', 'min_height'],
+                'fill-extrusion-opacity': 0.8
+            }
+        }, labelLayerId);
+
+        // --- 3. INJECT RADAR PULSE ---
+        const existingLayer = map.getLayer('grantsentmemap');
         if (existingLayer) {
-            // Add a circle layer using your exact same Mapbox Studio data
             map.addLayer({
                 'id': 'pulse-layer',
                 'type': 'circle',
                 'source': existingLayer.source,
                 'source-layer': existingLayer.sourceLayer,
                 'paint': {
-                    'circle-radius': 0,
-                    'circle-color': '#FF0000', // Matches your brand red
-                    'circle-opacity': 1,
-                    'circle-stroke-width': 0
+                    'circle-radius': 0, 'circle-color': '#FF0000', 'circle-opacity': 1, 'circle-stroke-width': 0
                 }
-            }, 'grantsentmemap'); // The key: This places it directly BELOW your triangles
+            }, 'grantsentmemap');
 
-            // The animation engine
-            let radius = 0;
-            let opacity = 1;
-
+            let radius = 0; let opacity = 1;
             function animateMarker() {
-                radius += 0.25; // How fast the ring expands
-                opacity -= 0.015; // How fast it fades out
-
-                if (radius > 18) { // Maximum size before it resets
-                    radius = 0;
-                    opacity = 1;
-                }
-
+                radius += 0.25; opacity -= 0.015;
+                if (radius > 18) { radius = 0; opacity = 1; }
                 map.setPaintProperty('pulse-layer', 'circle-radius', radius);
-                // Math.max prevents WebGL crashing from negative opacity
                 map.setPaintProperty('pulse-layer', 'circle-opacity', Math.max(0, opacity)); 
-
-                // Loops the animation forever at 60fps
                 requestAnimationFrame(animateMarker);
             }
             animateMarker();
         }
     });
 
+    // --- POPUP & CLICK LOGIC ---
     map.on('click', 'grantsentmemap', (e) => {
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
@@ -170,11 +206,9 @@
         const imgSource = props['Photo URL'] || props['Photo URL '];
         const socialLink = props['Social Link'] || props['IG Link'];
         const webLink = props['Link to their Website'];
-        
         const cuisine = props.Cuisine || '';
         const price = props.Price || '';
         const vibe = props.Vibe || '';
-
         const metaText = [cuisine, price].filter(Boolean).join(' &bull; ');
 
         const formatLink = (link) => {
@@ -186,42 +220,33 @@
         };
 
         const html = `
-            <div class="popup-title">${props.Name || 'Place Name'}</div>
-            ${metaText ? `<div class="popup-meta">${metaText}</div>` : ''}
-            <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
-            
             ${imgSource ? `<img class="popup-img" src="${imgSource.trim()}" onerror="this.style.display='none'">` : ''}
-            
-            ${vibe ? `<div class="popup-vibe">Vibe: ${vibe}</div>` : ''}
-            <div class="popup-take">${props.Review || 'No review yet.'}</div>
-            
+            <div class="popup-inner">
+                <div class="popup-title">${props.Name || 'Place Name'}</div>
+                ${metaText ? `<div class="popup-meta">${metaText}</div>` : ''}
+                <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
+                ${vibe ? `<div class="popup-vibe">Vibe: ${vibe}</div>` : ''}
+                <div class="popup-take">${props.Review || 'No review yet.'}</div>
+            </div>
             <div class="btn-container">
                 ${socialLink ? `<a href="${formatLink(socialLink)}" target="_blank" class="btn btn-black">Social</a>` : ''}
                 ${webLink ? `<a href="${formatLink(webLink)}" target="_blank" class="btn btn-outline">Website</a>` : ''}
             </div>
         `;
 
-        const popup = new mapboxgl.Popup({ offset: 25 })
+        const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
 
         const canvas = map.getCanvas();
         canvas.classList.add('map-dimmed');
-
         popup.on('close', () => { canvas.classList.remove('map-dimmed'); });
 
-        map.flyTo({
-            center: coordinates,
-            speed: 0.6,
-            curve: 1, 
-            offset: [0, -120],
-            essential: true 
-        });
+        map.flyTo({ center: coordinates, speed: 0.6, curve: 1, pitch: 70, offset: [0, -100], essential: true });
     });
 
-    // --- UPDATED CATEGORY FILTER LOGIC ---
-    // Now applies the filter to both the icons AND the pulse rings
+    // --- FILTER LOGIC ---
     document.getElementById('category-select').addEventListener('change', (e) => {
         const val = e.target.value;
         if (val === 'all') {
@@ -242,7 +267,6 @@
         overlay.style.opacity = '0'; 
         setTimeout(() => { overlay.style.display = 'none'; }, 400); 
     });
-
 </script>
 </body>
 </html>
