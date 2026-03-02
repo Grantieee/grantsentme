@@ -117,9 +117,13 @@
         }
         #search-input { width: 110px; font-size: 13px; }
         #search-input:focus { width: 140px; }
-        .watermark { top: 75px; left: 15px; padding: 10px 14px; }
-        .mapboxgl-popup-content { width: 280px; } 
-        .popup-img { height: 160px; } 
+        .watermark {
+            top: 75px; /* Pushed below the search bar */
+            left: 15px;
+            padding: 10px 14px;
+        }
+        .mapboxgl-popup-content { width: 280px; } /* Slightly narrower popup */
+        .popup-img { height: 160px; } /* Shorter image to fit screen */
         .welcome-content { padding: 40px 25px; }
         .welcome-title { font-size: 24px; }
     }
@@ -233,24 +237,15 @@
         }
     });
 
-    // --- 8-SECOND IDLE SCREENSAVER LOGIC ---
+    // --- DRONE ORBIT ANIMATION LOGIC ---
     let spinFrame;
     let isOrbiting = false;
-    let idleTimer;
-    const IDLE_TIME = 8000; // 8 seconds in milliseconds
 
     function spinGlobe() {
         if (!isOrbiting) return;
         const currentBearing = map.getBearing();
-        map.setBearing(currentBearing + 0.04); // Super slow, cinematic rotation
+        map.setBearing(currentBearing + 0.05); // Adjust 0.05 higher to spin faster, lower to spin slower
         spinFrame = requestAnimationFrame(spinGlobe);
-    }
-
-    function startIdleSpin() {
-        if (!isOrbiting) {
-            isOrbiting = true;
-            spinGlobe();
-        }
     }
 
     function stopSpinning() {
@@ -261,36 +256,16 @@
         }
     }
 
-    // This function resets the 8-second clock every time the user touches anything
-    function resetIdleTimer() {
-        stopSpinning(); // Stop the spin immediately if they touch the map
-        clearTimeout(idleTimer);
-        
-        // Only start the idle timer if the welcome overlay is gone
-        const overlay = document.getElementById('welcome-overlay');
-        if (overlay.style.display === 'none') {
-            idleTimer = setTimeout(startIdleSpin, IDLE_TIME);
-        }
-    }
-
-    // Listen for ALL forms of user interaction to keep the map awake
-    map.on('mousedown', resetIdleTimer);
-    map.on('mousemove', resetIdleTimer);
-    map.on('touchstart', resetIdleTimer);
-    map.on('touchmove', resetIdleTimer);
-    map.on('wheel', resetIdleTimer);
-    map.on('dragstart', resetIdleTimer);
-    map.on('zoomstart', resetIdleTimer);
-    map.on('pitchstart', resetIdleTimer);
-    document.getElementById('search-input').addEventListener('input', resetIdleTimer);
-    document.getElementById('search-input').addEventListener('focus', resetIdleTimer);
-    document.getElementById('category-select').addEventListener('change', resetIdleTimer);
+    // Stop spinning if the user interrupts the map
+    map.on('dragstart', stopSpinning);
+    map.on('touchstart', stopSpinning);
+    map.on('zoomstart', stopSpinning);
 
     // --- POPUP & CLICK LOGIC ---
     let currentPopup = null;
 
     map.on('click', 'grantsentmemap', (e) => {
-        resetIdleTimer(); // Touching a pin counts as interaction
+        stopSpinning(); // Stop any current spin
 
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
@@ -338,10 +313,20 @@
         
         currentPopup.on('close', () => { 
             canvas.classList.remove('map-dimmed'); 
+            stopSpinning(); 
             currentPopup = null;
         });
 
+        // Swoop in
         map.flyTo({ center: coordinates, speed: 0.6, curve: 1, pitch: 72, offset: [0, -100], essential: true });
+
+        // Once landed, begin the orbit
+        map.once('moveend', () => {
+            if (currentPopup && currentPopup.isOpen()) {
+                isOrbiting = true;
+                spinGlobe();
+            }
+        });
     });
 
     // --- UNIFIED SEARCH & FILTER LOGIC ---
@@ -375,14 +360,10 @@
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
 
-    // ENTER BUTTON LOGIC
     document.getElementById('enter-btn').addEventListener('click', () => {
         const overlay = document.getElementById('welcome-overlay');
         overlay.style.opacity = '0'; 
-        setTimeout(() => { 
-            overlay.style.display = 'none'; 
-            resetIdleTimer(); // START THE IDLE CLOCK ONCE THEY ENTER
-        }, 500); 
+        setTimeout(() => { overlay.style.display = 'none'; }, 500); 
     });
 </script>
 </body>
