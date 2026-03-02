@@ -80,6 +80,47 @@
     }
     .welcome-btn:hover { background: #e60000; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(255, 0, 0, 0.4); }
 
+    /* --- THUMBNAIL PHOTO MARKERS --- */
+    .photo-marker {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-size: cover;
+        background-position: center;
+        border: 2.5px solid #fff;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.6);
+        cursor: pointer;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        z-index: 20;
+    }
+    .photo-marker:hover {
+        transform: scale(1.15) translateY(-5px);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.8), 0 0 0 3px var(--brand-red);
+        z-index: 30;
+    }
+    /* The little triangle pointer at the bottom of the photo */
+    .photo-marker::after {
+        content: ''; position: absolute; bottom: -8px; left: 50%;
+        transform: translateX(-50%); border-width: 8px 7px 0; border-style: solid;
+        border-color: #fff transparent transparent transparent;
+    }
+
+    /* --- FALLBACK MONOGRAM MARKER --- */
+    .fallback-marker {
+        background: linear-gradient(135deg, #1c1c1e, #050505);
+        border-color: var(--brand-red); /* Uses your glowing red for the ring */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .fallback-text {
+        color: #fff;
+        font-weight: 900;
+        font-size: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
     /* --- THE CINEMATIC MAP BLUR --- */
     .mapboxgl-canvas { transition: filter 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important; }
     .map-dimmed { filter: blur(12px) brightness(0.25) !important; }
@@ -108,13 +149,8 @@
     .btn-black { background: #000; color: #fff; }
     .btn-outline { background: #f0f0f0; color: #000; }
 
-    /* --- IPHONE / MOBILE RESPONSIVENESS --- */
     @media (max-width: 600px) {
-        .top-bar-container {
-            top: 15px; right: 15px; left: 15px; 
-            justify-content: space-between;
-            padding: 10px 14px;
-        }
+        .top-bar-container { top: 15px; right: 15px; left: 15px; justify-content: space-between; padding: 10px 14px; }
         #search-input { width: 110px; font-size: 13px; }
         #search-input:focus { width: 140px; }
         .watermark { top: 75px; left: 15px; padding: 10px 14px; }
@@ -170,28 +206,34 @@
         antialias: true
     });
 
-    map.addControl(new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true, showUserHeading: true
-    }), 'bottom-right');
+    map.addControl(new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true }), 'bottom-right');
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     map.on('load', () => {
-        // --- MIDNIGHT FOG & SKY ---
-        map.setFog({ 'range': [0.5, 8], 'color': '#050505', 'horizon-blend': 0.1 });
+        // --- INVISIBLE LAYER OVERRIDE ---
+        // We make your old dots/diamonds invisible so the new Photo Thumbnails take over
+        const layerType = map.getLayer('grantsentmemap') ? map.getLayer('grantsentmemap').type : null;
+        if (layerType === 'symbol') { map.setPaintProperty('grantsentmemap', 'icon-opacity', 0); map.setPaintProperty('grantsentmemap', 'text-opacity', 0); }
+        else if (layerType === 'circle') { map.setPaintProperty('grantsentmemap', 'circle-opacity', 0); map.setPaintProperty('grantsentmemap', 'circle-stroke-opacity', 0); }
 
-        // --- OBSIDIAN 3D BUILDINGS ---
-        if (!map.getSource('composite')) {
-            map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
+        // --- TIME OF DAY LIGHTING ---
+        function setDynamicLighting() {
+            const currentHour = new Date().getHours();
+            let fogColor, bldgColor;
+            if (currentHour >= 6 && currentHour < 9) { fogColor = '#4a5568'; bldgColor = '#1a1c23'; } 
+            else if (currentHour >= 9 && currentHour < 17) { fogColor = '#718096'; bldgColor = '#2d3748'; } 
+            else if (currentHour >= 17 && currentHour < 20) { fogColor = '#ff5e62'; bldgColor = '#2a1715'; } 
+            else { fogColor = '#050505'; bldgColor = '#0a0a0a'; }
+
+            map.setFog({ 'range': [0.5, 8], 'color': fogColor, 'horizon-blend': 0.1 });
+            if (map.getLayer('3d-buildings')) map.setPaintProperty('3d-buildings', 'fill-extrusion-color', bldgColor);
         }
+
+        if (!map.getSource('composite')) map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
         
         const layers = map.getStyle().layers;
         let labelLayerId;
-        for (let i = 0; i < layers.length; i++) {
-            if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                labelLayerId = layers[i].id; break;
-            }
-        }
+        for (let i = 0; i < layers.length; i++) { if (layers[i].type === 'symbol' && layers[i].layout['text-field']) { labelLayerId = layers[i].id; break; } }
 
         map.addLayer({
             'id': '3d-buildings',
@@ -208,17 +250,16 @@
             }
         }, labelLayerId);
 
+        setDynamicLighting();
+
         // --- PREMIUM RADAR PULSE ---
-        const existingLayer = map.getLayer('grantsentmemap');
-        if (existingLayer) {
+        if (map.getLayer('grantsentmemap')) {
             map.addLayer({
                 'id': 'pulse-layer',
                 'type': 'circle',
-                'source': existingLayer.source,
-                'source-layer': existingLayer.sourceLayer,
-                'paint': {
-                    'circle-radius': 0, 'circle-color': '#FF0000', 'circle-opacity': 1, 'circle-stroke-width': 0
-                }
+                'source': map.getLayer('grantsentmemap').source,
+                'source-layer': map.getLayer('grantsentmemap').sourceLayer,
+                'paint': { 'circle-radius': 0, 'circle-color': '#FF0000', 'circle-opacity': 1, 'circle-stroke-width': 0 }
             }, 'grantsentmemap');
 
             let radius = 0; let opacity = 1;
@@ -233,75 +274,93 @@
         }
     });
 
-    // --- 8-SECOND IDLE SCREENSAVER LOGIC ---
+    // --- PHOTO MARKER GENERATOR W/ FALLBACK LOGIC ---
+    const dynamicMarkers = {};
+
+    map.on('render', () => {
+        if (!map.getLayer('grantsentmemap')) return;
+        const features = map.queryRenderedFeatures({ layers: ['grantsentmemap'] });
+        
+        features.forEach(feature => {
+            const coords = feature.geometry.coordinates;
+            const uniqueId = feature.properties.Name + coords[0];
+
+            if (!dynamicMarkers[uniqueId]) {
+                const imgSource = feature.properties['Photo URL'] || feature.properties['Photo URL '];
+                const placeName = feature.properties.Name || '?';
+                
+                const el = document.createElement('div');
+                el.className = 'photo-marker';
+                
+                // If there's a photo, use it. If not, trigger the Monogram Placeholder.
+                if (imgSource && imgSource.trim() !== '') {
+                    el.style.backgroundImage = `url(${imgSource.trim()})`;
+                } else {
+                    el.classList.add('fallback-marker');
+                    el.innerHTML = `<span class="fallback-text">${placeName.charAt(0).toUpperCase()}</span>`;
+                }
+                
+                const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+                    .setLngLat(coords)
+                    .addTo(map);
+
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    triggerPopup(feature);
+                });
+
+                dynamicMarkers[uniqueId] = { marker: marker, feature: feature };
+            }
+        });
+
+        updateFilters(); // Ensures markers follow the search rules immediately
+    });
+
+    // --- IDLE SCREENSAVER LOGIC ---
     let spinFrame;
     let isOrbiting = false;
     let idleTimer;
-    const IDLE_TIME = 8000; // 8 seconds in milliseconds
+    const IDLE_TIME = 8000; 
 
     function spinGlobe() {
         if (!isOrbiting) return;
-        const currentBearing = map.getBearing();
-        map.setBearing(currentBearing + 0.04); // Super slow, cinematic rotation
+        map.setBearing(map.getBearing() + 0.04); 
         spinFrame = requestAnimationFrame(spinGlobe);
     }
 
     function startIdleSpin() {
-        if (!isOrbiting) {
-            isOrbiting = true;
-            spinGlobe();
-        }
+        if (!isOrbiting) { isOrbiting = true; spinGlobe(); }
     }
 
     function stopSpinning() {
         isOrbiting = false;
-        if (spinFrame) {
-            cancelAnimationFrame(spinFrame);
-            spinFrame = null;
-        }
+        if (spinFrame) { cancelAnimationFrame(spinFrame); spinFrame = null; }
     }
 
-    // This function resets the 8-second clock every time the user touches anything
     function resetIdleTimer() {
-        stopSpinning(); // Stop the spin immediately if they touch the map
+        stopSpinning(); 
         clearTimeout(idleTimer);
-        
-        // Only start the idle timer if the welcome overlay is gone
         const overlay = document.getElementById('welcome-overlay');
-        if (overlay.style.display === 'none') {
-            idleTimer = setTimeout(startIdleSpin, IDLE_TIME);
-        }
+        if (overlay.style.display === 'none') idleTimer = setTimeout(startIdleSpin, IDLE_TIME);
     }
 
-    // Listen for ALL forms of user interaction to keep the map awake
-    map.on('mousedown', resetIdleTimer);
-    map.on('mousemove', resetIdleTimer);
-    map.on('touchstart', resetIdleTimer);
-    map.on('touchmove', resetIdleTimer);
-    map.on('wheel', resetIdleTimer);
-    map.on('dragstart', resetIdleTimer);
-    map.on('zoomstart', resetIdleTimer);
-    map.on('pitchstart', resetIdleTimer);
+    ['mousedown','mousemove','touchstart','touchmove','wheel','dragstart','zoomstart','pitchstart'].forEach(evt => map.on(evt, resetIdleTimer));
     document.getElementById('search-input').addEventListener('input', resetIdleTimer);
     document.getElementById('search-input').addEventListener('focus', resetIdleTimer);
     document.getElementById('category-select').addEventListener('change', resetIdleTimer);
 
-    // --- POPUP & CLICK LOGIC ---
+    // --- CENTRALIZED POPUP LOGIC ---
     let currentPopup = null;
 
-    map.on('click', 'grantsentmemap', (e) => {
-        resetIdleTimer(); // Touching a pin counts as interaction
-
-        const props = e.features[0].properties;
-        const coordinates = e.features[0].geometry.coordinates.slice();
+    function triggerPopup(feature) {
+        resetIdleTimer();
+        const props = feature.properties;
+        const coordinates = feature.geometry.coordinates.slice();
 
         const imgSource = props['Photo URL'] || props['Photo URL '];
         const socialLink = props['Social Link'] || props['IG Link'];
         const webLink = props['Link to their Website'];
-        const cuisine = props.Cuisine || '';
-        const price = props.Price || '';
-        const vibe = props.Vibe || '';
-        const metaText = [cuisine, price].filter(Boolean).join(' &bull; ');
+        const metaText = [props.Cuisine || '', props.Price || ''].filter(Boolean).join(' &bull; ');
 
         const formatLink = (link) => {
             if (!link) return null;
@@ -317,7 +376,7 @@
                 <div class="popup-title">${props.Name || 'Place Name'}</div>
                 ${metaText ? `<div class="popup-meta">${metaText}</div>` : ''}
                 <div class="popup-score">SCORE: ${props.Score || 'N/A'}</div>
-                ${vibe ? `<div class="popup-vibe">Vibe: ${vibe}</div>` : ''}
+                ${props.Vibe ? `<div class="popup-vibe">Vibe: ${props.Vibe}</div>` : ''}
                 <div class="popup-take">${props.Review || 'No review yet.'}</div>
             </div>
             <div class="btn-container">
@@ -328,7 +387,7 @@
 
         if (currentPopup) currentPopup.remove();
 
-        currentPopup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+        currentPopup = new mapboxgl.Popup({ offset: 35, closeButton: false }) // Offset slightly higher for the photo marker
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
@@ -342,47 +401,48 @@
         });
 
         map.flyTo({ center: coordinates, speed: 0.6, curve: 1, pitch: 72, offset: [0, -100], essential: true });
-    });
+    }
 
-    // --- UNIFIED SEARCH & FILTER LOGIC ---
+    // Fallback if they click the invisible layer directly instead of the photo bubble
+    map.on('click', 'grantsentmemap', (e) => triggerPopup(e.features[0]));
+
+    // --- SEARCH & FILTER LOGIC ---
     let currentCategory = 'all';
     let currentSearch = '';
 
     function updateFilters() {
         const filters = ['all']; 
-        if (currentCategory !== 'all') {
-            filters.push(['==', ['downcase', ['get', 'Category']], currentCategory.toLowerCase()]);
-        }
-        if (currentSearch !== '') {
-            filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['get', 'Name']]]);
-        }
-        const finalFilter = filters.length > 1 ? filters : null;
+        if (currentCategory !== 'all') filters.push(['==', ['downcase', ['get', 'Category']], currentCategory.toLowerCase()]);
+        if (currentSearch !== '') filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['get', 'Name']]]);
         
+        const finalFilter = filters.length > 1 ? filters : null;
         map.setFilter('grantsentmemap', finalFilter);
-        if (map.getLayer('pulse-layer')) {
-            map.setFilter('pulse-layer', finalFilter);
-        }
+        if (map.getLayer('pulse-layer')) map.setFilter('pulse-layer', finalFilter);
+
+        // Hide/Show the HTML Photo Markers based on the filter
+        Object.values(dynamicMarkers).forEach(markerObj => {
+            const props = markerObj.feature.properties;
+            const catMatch = currentCategory === 'all' || (props.Category && props.Category.toLowerCase() === currentCategory.toLowerCase());
+            const searchMatch = currentSearch === '' || (props.Name && props.Name.toLowerCase().includes(currentSearch.toLowerCase()));
+            
+            if (catMatch && searchMatch) {
+                markerObj.marker.getElement().style.display = 'flex'; // Uses flex to keep the letter centered if fallback
+            } else {
+                markerObj.marker.getElement().style.display = 'none';
+            }
+        });
     }
 
-    document.getElementById('category-select').addEventListener('change', (e) => {
-        currentCategory = e.target.value; updateFilters();
-    });
-
-    document.getElementById('search-input').addEventListener('input', (e) => {
-        currentSearch = e.target.value; updateFilters();
-    });
+    document.getElementById('category-select').addEventListener('change', (e) => { currentCategory = e.target.value; updateFilters(); });
+    document.getElementById('search-input').addEventListener('input', (e) => { currentSearch = e.target.value; updateFilters(); });
 
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
 
-    // ENTER BUTTON LOGIC
     document.getElementById('enter-btn').addEventListener('click', () => {
         const overlay = document.getElementById('welcome-overlay');
         overlay.style.opacity = '0'; 
-        setTimeout(() => { 
-            overlay.style.display = 'none'; 
-            resetIdleTimer(); // START THE IDLE CLOCK ONCE THEY ENTER
-        }, 500); 
+        setTimeout(() => { overlay.style.display = 'none'; resetIdleTimer(); }, 500); 
     });
 </script>
 </body>
