@@ -29,7 +29,7 @@
         position: absolute; top: 20px; left: 20px; z-index: 10;
         color: #fff; font-size: 11px; font-weight: 800;
         text-transform: uppercase; letter-spacing: 2px; text-decoration: none;
-        padding: 12px 18px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s;
+        padding: 12px 18px; transition: transform 0.3s ease;
     }
     .watermark:hover { color: var(--brand-red); transform: scale(1.03); }
 
@@ -37,16 +37,15 @@
     .top-bar-container {
         position: absolute; top: 20px; right: 20px; z-index: 10; 
         display: flex; align-items: center; padding: 8px 16px; gap: 16px;
-        transition: all 0.3s ease;
     }
     .search-container { display: flex; align-items: center; }
     #search-input {
         background: transparent; border: none; color: #fff; outline: none;
-        font-family: inherit; font-size: 14px; font-weight: 500; width: 150px;
-        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: inherit; font-size: 14px; font-weight: 500; width: 130px;
+        transition: width 0.4s ease;
     }
     #search-input::placeholder { color: rgba(255,255,255,0.5); font-weight: 500; }
-    #search-input:focus { width: 200px; } 
+    #search-input:focus { width: 180px; } 
 
     .divider { width: 1px; height: 20px; background: rgba(255,255,255,0.15); }
 
@@ -57,6 +56,19 @@
         font-size: 13px; font-family: inherit; cursor: pointer; outline: none; letter-spacing: 0.5px;
     }
     #category-select option { background: #1c1c1e; color: #fff; }
+
+    /* --- HIT LIST BUTTON --- */
+    .hit-list-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none; color: #fff; font-weight: 800; font-size: 11px;
+        text-transform: uppercase; letter-spacing: 1px; padding: 6px 12px;
+        border-radius: 10px; cursor: pointer; transition: all 0.2s;
+    }
+    .hit-list-btn.active {
+        background: var(--brand-red);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(255, 0, 0, 0.4);
+    }
 
     /* --- THE "BLACK CARD" WELCOME OVERLAY --- */
     #welcome-overlay {
@@ -102,30 +114,22 @@
     .popup-vibe { font-size: 12px; font-weight: 600; color: #444; margin-bottom: 10px; background: #f0f0f0; padding: 8px 12px; border-radius: 8px; display: inline-block; }
     .popup-take { font-size: 14px; line-height: 1.5; color: #333; margin-bottom: 14px; padding-top: 10px; border-top: 1px solid #eee; }
     
-    .btn-container { display: flex; gap: 10px; padding: 0 22px 22px 22px; }
-    .btn { flex: 1; text-align: center; padding: 12px; font-size: 11px; font-weight: 800; text-decoration: none; text-transform: uppercase; border-radius: 12px; transition: opacity 0.2s, transform 0.2s; }
+    .btn-container { display: flex; gap: 8px; padding: 0 22px 22px 22px; flex-wrap: wrap; }
+    .btn { flex: 1 1 45%; text-align: center; padding: 12px; font-size: 11px; font-weight: 800; text-decoration: none; text-transform: uppercase; border-radius: 12px; cursor: pointer; border: none; transition: all 0.2s; }
     .btn:hover { opacity: 0.9; transform: translateY(-1px); }
     .btn-black { background: #000; color: #fff; }
     .btn-outline { background: #f0f0f0; color: #000; }
+    
+    /* Dynamic Save Button Styles */
+    .btn-save { background: #f0f0f0; color: #000; flex: 1 1 100%; margin-bottom: 4px; }
+    .btn-save.saved-active { background: var(--brand-red); color: #fff; }
 
-    /* --- IPHONE / MOBILE RESPONSIVENESS --- */
-    @media (max-width: 600px) {
-        .top-bar-container {
-            top: 15px; right: 15px; left: 15px; 
-            justify-content: space-between;
-            padding: 10px 14px;
-        }
-        #search-input { width: 110px; font-size: 13px; }
-        #search-input:focus { width: 140px; }
-        .watermark {
-            top: 75px; /* Pushed below the search bar */
-            left: 15px;
-            padding: 10px 14px;
-        }
-        .mapboxgl-popup-content { width: 280px; } /* Slightly narrower popup */
-        .popup-img { height: 160px; } /* Shorter image to fit screen */
-        .welcome-content { padding: 40px 25px; }
-        .welcome-title { font-size: 24px; }
+    @media (max-width: 650px) {
+        .top-bar-container { top: 15px; right: 15px; left: 15px; justify-content: space-between; padding: 10px 14px; flex-wrap: wrap; }
+        #search-input { width: 100%; font-size: 14px; margin-bottom: 8px; }
+        #search-input:focus { width: 100%; }
+        .divider { display: none; }
+        .watermark { top: 110px; left: 15px; padding: 10px 14px; }
     }
 </style>
 </head>
@@ -153,10 +157,11 @@
             <option value="Restaurant">Restaurants</option>
             <option value="Bakery/Cafe">Bakeries</option>
             <option value="Bar/Speakeasy">Bars</option>
-            <option value="Street Food">Street Food</option>
             <option value="Shop">Shops</option>
         </select>
     </div>
+    <div class="divider"></div>
+    <button id="toggle-hitlist" class="hit-list-btn">🖤 My Hit List</button>
 </div>
 
 <div id="map"></div>
@@ -164,6 +169,37 @@
 <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JhbnRzZW50bWUiLCJhIjoiY21semtoaHl5MDgyMzNlb2s3M2J5eGdyMiJ9.O0JLwYp11XNKPZB9FDXgMg';
     
+    // --- LOCAL STORAGE LOGIC ---
+    // This loads the user's saved spots from their phone's browser, or creates an empty list if it's their first time.
+    let savedSpots = JSON.parse(localStorage.getItem('grantHitList')) || [];
+
+    // Global function so the popup buttons can trigger it
+    window.toggleSaveSpot = function(spotName) {
+        const btn = document.getElementById('save-btn-' + spotName.replace(/\\s+/g, '-'));
+        
+        if (savedSpots.includes(spotName)) {
+            // Remove from list
+            savedSpots = savedSpots.filter(name => name !== spotName);
+            if (btn) {
+                btn.classList.remove('saved-active');
+                btn.innerHTML = '★ SAVE TO HIT LIST';
+            }
+        } else {
+            // Add to list
+            savedSpots.push(spotName);
+            if (btn) {
+                btn.classList.add('saved-active');
+                btn.innerHTML = '★ SAVED TO HIT LIST';
+            }
+        }
+        
+        // Save back to the browser's memory
+        localStorage.setItem('grantHitList', JSON.stringify(savedSpots));
+        
+        // If they are currently looking at the Hit List filter, update the map instantly
+        if (showingHitList) updateFilters();
+    };
+
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/grantsentme/cmlzkldac001601scglds8nyx', 
@@ -174,17 +210,12 @@
         antialias: true
     });
 
-    map.addControl(new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true, showUserHeading: true
-    }), 'bottom-right');
+    map.addControl(new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true, showUserHeading: true }), 'bottom-right');
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     map.on('load', () => {
-        // --- MIDNIGHT FOG & SKY ---
         map.setFog({ 'range': [0.5, 8], 'color': '#050505', 'horizon-blend': 0.1 });
 
-        // --- OBSIDIAN 3D BUILDINGS ---
         if (!map.getSource('composite')) {
             map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
         }
@@ -212,7 +243,6 @@
             }
         }, labelLayerId);
 
-        // --- PREMIUM RADAR PULSE ---
         const existingLayer = map.getLayer('grantsentmemap');
         if (existingLayer) {
             map.addLayer({
@@ -237,36 +267,9 @@
         }
     });
 
-    // --- DRONE ORBIT ANIMATION LOGIC ---
-    let spinFrame;
-    let isOrbiting = false;
-
-    function spinGlobe() {
-        if (!isOrbiting) return;
-        const currentBearing = map.getBearing();
-        map.setBearing(currentBearing + 0.05); // Adjust 0.05 higher to spin faster, lower to spin slower
-        spinFrame = requestAnimationFrame(spinGlobe);
-    }
-
-    function stopSpinning() {
-        isOrbiting = false;
-        if (spinFrame) {
-            cancelAnimationFrame(spinFrame);
-            spinFrame = null;
-        }
-    }
-
-    // Stop spinning if the user interrupts the map
-    map.on('dragstart', stopSpinning);
-    map.on('touchstart', stopSpinning);
-    map.on('zoomstart', stopSpinning);
-
-    // --- POPUP & CLICK LOGIC ---
     let currentPopup = null;
 
     map.on('click', 'grantsentmemap', (e) => {
-        stopSpinning(); // Stop any current spin
-
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
 
@@ -277,6 +280,15 @@
         const price = props.Price || '';
         const vibe = props.Vibe || '';
         const metaText = [cuisine, price].filter(Boolean).join(' &bull; ');
+
+        // Check if this specific spot is already in their local storage
+        const isSaved = savedSpots.includes(props.Name);
+        const saveBtnClass = isSaved ? 'btn btn-save saved-active' : 'btn btn-save';
+        const saveBtnText = isSaved ? '★ SAVED TO HIT LIST' : '★ SAVE TO HIT LIST';
+        
+        // Create a safe string to pass into the Javascript onclick function
+        const safeName = props.Name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeId = props.Name.replace(/\\s+/g, '-');
 
         const formatLink = (link) => {
             if (!link) return null;
@@ -296,6 +308,7 @@
                 <div class="popup-take">${props.Review || 'No review yet.'}</div>
             </div>
             <div class="btn-container">
+                <button id="save-btn-${safeId}" class="${saveBtnClass}" onclick="toggleSaveSpot('${safeName}')">${saveBtnText}</button>
                 ${socialLink ? `<a href="${formatLink(socialLink)}" target="_blank" class="btn btn-black">Social</a>` : ''}
                 ${webLink ? `<a href="${formatLink(webLink)}" target="_blank" class="btn btn-outline">Website</a>` : ''}
             </div>
@@ -313,34 +326,36 @@
         
         currentPopup.on('close', () => { 
             canvas.classList.remove('map-dimmed'); 
-            stopSpinning(); 
             currentPopup = null;
         });
 
-        // Swoop in
         map.flyTo({ center: coordinates, speed: 0.6, curve: 1, pitch: 72, offset: [0, -100], essential: true });
-
-        // Once landed, begin the orbit
-        map.once('moveend', () => {
-            if (currentPopup && currentPopup.isOpen()) {
-                isOrbiting = true;
-                spinGlobe();
-            }
-        });
     });
 
-    // --- UNIFIED SEARCH & FILTER LOGIC ---
+    // --- UNIFIED SEARCH, FILTER, & HIT LIST LOGIC ---
     let currentCategory = 'all';
     let currentSearch = '';
+    let showingHitList = false;
 
     function updateFilters() {
         const filters = ['all']; 
+        
         if (currentCategory !== 'all') {
             filters.push(['==', ['downcase', ['get', 'Category']], currentCategory.toLowerCase()]);
         }
         if (currentSearch !== '') {
             filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['get', 'Name']]]);
         }
+        if (showingHitList) {
+            if (savedSpots.length === 0) {
+                // If they have no saved spots, hide everything
+                filters.push(['==', 'Name', '___EMPTY___']);
+            } else {
+                // Only show spots where the Name matches one of the saved strings
+                filters.push(['match', ['get', 'Name'], savedSpots, true, false]);
+            }
+        }
+
         const finalFilter = filters.length > 1 ? filters : null;
         
         map.setFilter('grantsentmemap', finalFilter);
@@ -355,6 +370,19 @@
 
     document.getElementById('search-input').addEventListener('input', (e) => {
         currentSearch = e.target.value; updateFilters();
+    });
+    
+    // Toggle Hit List Button Logic
+    document.getElementById('toggle-hitlist').addEventListener('click', (e) => {
+        showingHitList = !showingHitList;
+        if (showingHitList) {
+            e.target.classList.add('active');
+            e.target.innerHTML = '❤️ Viewing Hit List';
+        } else {
+            e.target.classList.remove('active');
+            e.target.innerHTML = '🖤 My Hit List';
+        }
+        updateFilters();
     });
 
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
