@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Grant's Picks | NYC</title>
-<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js"></script>
 <style>
@@ -11,7 +11,7 @@
         --brand-red: #FF0000;
         --ios-blur: blur(24px);
     }
-    body { margin: 0; padding: 0; background-color: #000; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif; }
+    body { margin: 0; padding: 0; background-color: #000; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif; overflow: hidden; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
     /* --- ULTRA-PREMIUM GLASS UI --- */
@@ -19,7 +19,6 @@
         background: rgba(20, 20, 22, 0.65);
         backdrop-filter: var(--ios-blur);
         -webkit-backdrop-filter: var(--ios-blur);
-        /* The Apple trick: A subtle bright top-border to catch the light */
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         border-radius: 18px;
@@ -30,7 +29,7 @@
         position: absolute; top: 20px; left: 20px; z-index: 10;
         color: #fff; font-size: 11px; font-weight: 800;
         text-transform: uppercase; letter-spacing: 2px; text-decoration: none;
-        padding: 12px 18px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 12px 18px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s;
     }
     .watermark:hover { color: var(--brand-red); transform: scale(1.03); }
 
@@ -38,6 +37,7 @@
     .top-bar-container {
         position: absolute; top: 20px; right: 20px; z-index: 10; 
         display: flex; align-items: center; padding: 8px 16px; gap: 16px;
+        transition: all 0.3s ease;
     }
     .search-container { display: flex; align-items: center; }
     #search-input {
@@ -63,12 +63,12 @@
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         z-index: 9999; display: flex; justify-content: center; align-items: center;
-        transition: opacity 0.5s ease; 
+        transition: opacity 0.5s ease; padding: 20px; box-sizing: border-box;
     }
     .welcome-content {
         background: rgba(20, 20, 22, 0.85); padding: 50px 40px; border-radius: 32px;
         box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        text-align: center; max-width: 340px; border: 1px solid rgba(255,255,255,0.1);
+        text-align: center; max-width: 340px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
     }
     .welcome-title { font-weight: 900; text-transform: uppercase; font-size: 28px; margin-bottom: 12px; color: #fff; letter-spacing: -0.5px; }
     .welcome-desc { font-size: 15px; color: #aaa; margin-bottom: 30px; line-height: 1.6; font-weight: 400; }
@@ -85,13 +85,14 @@
     .map-dimmed { filter: blur(12px) brightness(0.25) !important; }
 
     /* GPS BUTTON FIX FOR DARK MODE */
-    .mapboxgl-ctrl-group { background: rgba(20, 20, 22, 0.65) !important; backdrop-filter: var(--ios-blur); border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
+    .mapboxgl-ctrl-group { background: rgba(20, 20, 22, 0.65) !important; backdrop-filter: var(--ios-blur); border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px !important; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; margin-bottom: 30px; margin-right: 15px; }
     .mapboxgl-ctrl-icon { filter: invert(1); opacity: 0.8; }
 
     /* --- PREMIUM POPUP STYLES --- */
+    .mapboxgl-popup { z-index: 50; }
     .mapboxgl-popup-content {
         padding: 0; background: #fff; border-radius: 24px; overflow: hidden;
-        box-shadow: 0 30px 60px rgba(0,0,0,0.6); width: 300px; border: none;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.6); width: 300px; max-width: 90vw; border: none;
     }
     .popup-inner { padding: 22px; }
     .popup-title { font-weight: 900; text-transform: uppercase; font-size: 22px; margin-bottom: 4px; letter-spacing: -0.8px; color: #111; }
@@ -106,6 +107,26 @@
     .btn:hover { opacity: 0.9; transform: translateY(-1px); }
     .btn-black { background: #000; color: #fff; }
     .btn-outline { background: #f0f0f0; color: #000; }
+
+    /* --- IPHONE / MOBILE RESPONSIVENESS --- */
+    @media (max-width: 600px) {
+        .top-bar-container {
+            top: 15px; right: 15px; left: 15px; 
+            justify-content: space-between;
+            padding: 10px 14px;
+        }
+        #search-input { width: 110px; font-size: 13px; }
+        #search-input:focus { width: 140px; }
+        .watermark {
+            top: 75px; /* Pushed below the search bar */
+            left: 15px;
+            padding: 10px 14px;
+        }
+        .mapboxgl-popup-content { width: 280px; } /* Slightly narrower popup */
+        .popup-img { height: 160px; } /* Shorter image to fit screen */
+        .welcome-content { padding: 40px 25px; }
+        .welcome-title { font-size: 24px; }
+    }
 </style>
 </head>
 <body>
@@ -122,7 +143,7 @@
 
 <div class="top-bar-container glass-ui">
     <div class="search-container">
-        <input type="text" id="search-input" placeholder="Search for a spot..." autocomplete="off">
+        <input type="text" id="search-input" placeholder="Search a spot..." autocomplete="off">
     </div>
     <div class="divider"></div>
     <div class="filter-container">
@@ -148,7 +169,7 @@
         style: 'mapbox://styles/grantsentme/cmlzkldac001601scglds8nyx', 
         center: [-73.988, 40.730], 
         zoom: 15.8,
-        pitch: 68, // More aggressive tilt for that 3D city feel
+        pitch: 68, 
         bearing: -15,
         antialias: true
     });
@@ -160,10 +181,10 @@
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     map.on('load', () => {
-        // --- 1. MIDNIGHT FOG & SKY ---
+        // --- MIDNIGHT FOG & SKY ---
         map.setFog({ 'range': [0.5, 8], 'color': '#050505', 'horizon-blend': 0.1 });
 
-        // --- 2. OBSIDIAN 3D BUILDINGS ---
+        // --- OBSIDIAN 3D BUILDINGS ---
         if (!map.getSource('composite')) {
             map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
         }
@@ -184,14 +205,14 @@
             'type': 'fill-extrusion',
             'minzoom': 14,
             'paint': {
-                'fill-extrusion-color': '#0a0a0a', // Almost pitch black
+                'fill-extrusion-color': '#0a0a0a', 
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-base': ['get', 'min_height'],
-                'fill-extrusion-opacity': 0.9 // Glossy finish
+                'fill-extrusion-opacity': 0.9 
             }
         }, labelLayerId);
 
-        // --- 3. PREMIUM RADAR PULSE ---
+        // --- PREMIUM RADAR PULSE ---
         const existingLayer = map.getLayer('grantsentmemap');
         if (existingLayer) {
             map.addLayer({
@@ -206,7 +227,7 @@
 
             let radius = 0; let opacity = 1;
             function animateMarker() {
-                radius += 0.2; opacity -= 0.012; // Smoother, slower pulse
+                radius += 0.2; opacity -= 0.012; 
                 if (radius > 16) { radius = 0; opacity = 1; }
                 map.setPaintProperty('pulse-layer', 'circle-radius', radius);
                 map.setPaintProperty('pulse-layer', 'circle-opacity', Math.max(0, opacity)); 
@@ -216,8 +237,36 @@
         }
     });
 
+    // --- DRONE ORBIT ANIMATION LOGIC ---
+    let spinFrame;
+    let isOrbiting = false;
+
+    function spinGlobe() {
+        if (!isOrbiting) return;
+        const currentBearing = map.getBearing();
+        map.setBearing(currentBearing + 0.05); // Adjust 0.05 higher to spin faster, lower to spin slower
+        spinFrame = requestAnimationFrame(spinGlobe);
+    }
+
+    function stopSpinning() {
+        isOrbiting = false;
+        if (spinFrame) {
+            cancelAnimationFrame(spinFrame);
+            spinFrame = null;
+        }
+    }
+
+    // Stop spinning if the user interrupts the map
+    map.on('dragstart', stopSpinning);
+    map.on('touchstart', stopSpinning);
+    map.on('zoomstart', stopSpinning);
+
     // --- POPUP & CLICK LOGIC ---
+    let currentPopup = null;
+
     map.on('click', 'grantsentmemap', (e) => {
+        stopSpinning(); // Stop any current spin
+
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
 
@@ -252,16 +301,32 @@
             </div>
         `;
 
-        const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+        if (currentPopup) currentPopup.remove();
+
+        currentPopup = new mapboxgl.Popup({ offset: 25, closeButton: false })
             .setLngLat(coordinates)
             .setHTML(html)
             .addTo(map);
 
         const canvas = map.getCanvas();
         canvas.classList.add('map-dimmed');
-        popup.on('close', () => { canvas.classList.remove('map-dimmed'); });
+        
+        currentPopup.on('close', () => { 
+            canvas.classList.remove('map-dimmed'); 
+            stopSpinning(); 
+            currentPopup = null;
+        });
 
-        map.flyTo({ center: coordinates, speed: 0.6, curve: 1, pitch: 72, offset: [0, -120], essential: true });
+        // Swoop in
+        map.flyTo({ center: coordinates, speed: 0.6, curve: 1, pitch: 72, offset: [0, -100], essential: true });
+
+        // Once landed, begin the orbit
+        map.once('moveend', () => {
+            if (currentPopup && currentPopup.isOpen()) {
+                isOrbiting = true;
+                spinGlobe();
+            }
+        });
     });
 
     // --- UNIFIED SEARCH & FILTER LOGIC ---
