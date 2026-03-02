@@ -33,6 +33,31 @@
     }
     .watermark:hover { color: var(--brand-red); transform: scale(1.02); }
 
+    /* --- TOP BAR: SEARCH & FILTER --- */
+    .top-bar-container {
+        position: absolute; top: 20px; right: 20px; z-index: 10; 
+        display: flex; align-items: center; padding: 6px 12px; gap: 12px;
+    }
+    
+    .search-container { display: flex; align-items: center; }
+    #search-input {
+        background: transparent; border: none; color: #fff; outline: none;
+        font-family: inherit; font-size: 13px; font-weight: 500; width: 140px;
+        transition: width 0.3s ease;
+    }
+    #search-input::placeholder { color: rgba(255,255,255,0.6); font-weight: 500; }
+    #search-input:focus { width: 180px; } /* Expands slightly when typing */
+
+    .divider { width: 1px; height: 18px; background: rgba(255,255,255,0.2); }
+
+    .filter-container { display: flex; align-items: center; }
+    .filter-label { color: rgba(255,255,255,0.6); font-weight: 800; font-size: 10px; margin-right: 6px; letter-spacing: 1px; }
+    #category-select {
+        background: transparent; color: #fff; border: none; font-weight: 700;
+        font-size: 12px; font-family: inherit; cursor: pointer; outline: none;
+    }
+    #category-select option { background: #1c1c1e; color: #fff; }
+
     /* --- WELCOME OVERLAY STYLES --- */
     #welcome-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -53,18 +78,6 @@
         letter-spacing: 1px; width: 100%; border-radius: 12px; transition: transform 0.2s, background 0.2s;
     }
     .welcome-btn:hover { background: #cc0000; transform: translateY(-2px); }
-
-    /* --- MAP UI STYLES --- */
-    .filter-group {
-        position: absolute; top: 20px; right: 20px; z-index: 10; 
-        padding: 8px 12px; display: flex; align-items: center;
-    }
-    .filter-label { color: #fff; font-weight: 800; font-size: 11px; margin-right: 6px; letter-spacing: 1px; }
-    #category-select {
-        background: transparent; color: #fff; border: none; font-weight: 700;
-        font-size: 12px; font-family: inherit; cursor: pointer; outline: none;
-    }
-    #category-select option { background: #1c1c1e; color: #fff; }
 
     /* --- THE CINEMATIC MAP BLUR --- */
     .mapboxgl-canvas { transition: filter 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important; }
@@ -106,16 +119,22 @@
 
 <a href="https://instagram.com/grantwillian" target="_blank" class="watermark glass-ui">@grantwillian</a>
 
-<div class="filter-group glass-ui">
-    <span class="filter-label">FILTER:</span>
-    <select id="category-select">
-        <option value="all">Show All</option>
-        <option value="Restaurant">Restaurants</option>
-        <option value="Bakery/Cafe">Bakeries</option>
-        <option value="Bar/Speakeasy">Bars</option>
-        <option value="Street Food">Street Food</option>
-        <option value="Shop">Shops</option>
-    </select>
+<div class="top-bar-container glass-ui">
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search for a spot..." autocomplete="off">
+    </div>
+    <div class="divider"></div>
+    <div class="filter-container">
+        <span class="filter-label">FILTER:</span>
+        <select id="category-select">
+            <option value="all">Show All</option>
+            <option value="Restaurant">Restaurants</option>
+            <option value="Bakery/Cafe">Bakeries</option>
+            <option value="Bar/Speakeasy">Bars</option>
+            <option value="Street Food">Street Food</option>
+            <option value="Shop">Shops</option>
+        </select>
+    </div>
 </div>
 
 <div id="map"></div>
@@ -141,11 +160,8 @@
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     map.on('load', () => {
-        // --- 1. ADD CINEMATIC FOG ---
         map.setFog({ 'range': [0.5, 10], 'color': '#000', 'horizon-blend': 0.05 });
 
-        // --- 2. ADD 3D BUILDINGS ---
-        // We pull the default Mapbox building source and overlay it on your custom style
         if (!map.getSource('composite')) {
             map.addSource('composite', { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' });
         }
@@ -166,14 +182,13 @@
             'type': 'fill-extrusion',
             'minzoom': 14,
             'paint': {
-                'fill-extrusion-color': '#1a1a1a', // Dark buildings
+                'fill-extrusion-color': '#1a1a1a',
                 'fill-extrusion-height': ['get', 'height'],
                 'fill-extrusion-base': ['get', 'min_height'],
                 'fill-extrusion-opacity': 0.8
             }
         }, labelLayerId);
 
-        // --- 3. INJECT RADAR PULSE ---
         const existingLayer = map.getLayer('grantsentmemap');
         if (existingLayer) {
             map.addLayer({
@@ -198,7 +213,6 @@
         }
     });
 
-    // --- POPUP & CLICK LOGIC ---
     map.on('click', 'grantsentmemap', (e) => {
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
@@ -246,17 +260,38 @@
         map.flyTo({ center: coordinates, speed: 0.6, curve: 1, pitch: 70, offset: [0, -100], essential: true });
     });
 
-    // --- FILTER LOGIC ---
-    document.getElementById('category-select').addEventListener('change', (e) => {
-        const val = e.target.value;
-        if (val === 'all') {
-            map.setFilter('grantsentmemap', null);
-            if (map.getLayer('pulse-layer')) map.setFilter('pulse-layer', null);
-        } else {
-            const filterRules = ['==', ['downcase', ['get', 'Category']], val.toLowerCase()];
-            map.setFilter('grantsentmemap', filterRules);
-            if (map.getLayer('pulse-layer')) map.setFilter('pulse-layer', filterRules);
+    // --- UNIFIED SEARCH & FILTER LOGIC ---
+    let currentCategory = 'all';
+    let currentSearch = '';
+
+    function updateFilters() {
+        const filters = ['all']; // 'all' means all conditions must be true
+        
+        if (currentCategory !== 'all') {
+            filters.push(['==', ['downcase', ['get', 'Category']], currentCategory.toLowerCase()]);
         }
+        
+        if (currentSearch !== '') {
+            // Checks if the typed search text exists anywhere inside the "Name" property
+            filters.push(['in', currentSearch.toLowerCase(), ['downcase', ['get', 'Name']]]);
+        }
+
+        const finalFilter = filters.length > 1 ? filters : null;
+        
+        map.setFilter('grantsentmemap', finalFilter);
+        if (map.getLayer('pulse-layer')) {
+            map.setFilter('pulse-layer', finalFilter);
+        }
+    }
+
+    document.getElementById('category-select').addEventListener('change', (e) => {
+        currentCategory = e.target.value;
+        updateFilters();
+    });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        currentSearch = e.target.value;
+        updateFilters();
     });
 
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
