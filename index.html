@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Grant's Picks | NYC</title>
+<title>Grant's Picks | Ignition Social</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js"></script>
@@ -13,12 +13,12 @@
 
     /* --- APPLE-STYLE GLASS UI --- */
     .glass-ui {
-        background: rgba(28, 28, 30, 0.7);
+        background: rgba(28, 28, 30, 0.75);
         backdrop-filter: var(--ios-blur);
         -webkit-backdrop-filter: var(--ios-blur);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 14px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
     }
 
     /* WATERMARK & FILTERS */
@@ -37,21 +37,41 @@
     }
     #category-select option { background: #1c1c1e; color: #fff; }
 
+    /* --- WELCOME OVERLAY --- */
+    #welcome-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.85); z-index: 9999; 
+        display: flex; justify-content: center; align-items: center;
+        transition: opacity 0.4s ease; 
+    }
+    .welcome-content {
+        background: #fff; padding: 40px 30px; border: 4px solid var(--brand-red);
+        box-shadow: 12px 12px 0px rgba(0,0,0,1); text-align: center; max-width: 320px;
+    }
+    .welcome-title { font-weight: 900; text-transform: uppercase; font-size: 26px; margin-bottom: 10px; color: #000; }
+    .welcome-desc { font-size: 14px; color: #333; margin-bottom: 25px; line-height: 1.5; }
+    .welcome-btn {
+        background: var(--brand-red); color: #fff; border: 2px solid #000; padding: 12px 24px;
+        font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 14px;
+        letter-spacing: 1px; width: 100%; transition: background 0.2s;
+    }
+
     /* --- MODERN POPUP --- */
     .mapboxgl-popup-content {
         padding: 0; background: #fff; border-radius: 22px; overflow: hidden;
         box-shadow: 0 25px 50px rgba(0,0,0,0.5); width: 280px; border: none;
     }
-    .popup-img { width: 100%; height: 190px; object-fit: cover; }
+    .popup-img { width: 100%; height: 190px; object-fit: cover; border-bottom: 2px solid #eee; }
     .popup-inner { padding: 20px; }
     .popup-title { font-weight: 800; font-size: 20px; color: #000; margin-bottom: 2px; }
     .popup-meta { color: #888; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
     .popup-must-order { 
-        background: #000; color: #fff; padding: 10px 20px; font-size: 12px; 
+        background: #000; color: #fff; padding: 10px 20px; font-size: 11px; 
         font-weight: 800; text-transform: uppercase; border-bottom: 3px solid var(--brand-red);
     }
     .popup-must-order span { color: var(--brand-red); margin-right: 5px; }
     .popup-score { color: var(--brand-red); font-weight: 900; font-size: 14px; margin-top: 5px; }
+    .popup-take { font-size: 13px; line-height: 1.5; color: #333; margin-top: 10px; }
 
     .btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 15px; background: #f9f9f9; }
     .btn { 
@@ -71,7 +91,7 @@
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
     }
 
-    /* MAP FOCUS EFFECT */
+    /* --- MAP EFFECTS --- */
     .mapboxgl-canvas { transition: filter 0.7s cubic-bezier(0.4, 0, 0.2, 1) !important; }
     .map-dimmed { filter: brightness(0.3) blur(10px) !important; }
 
@@ -81,15 +101,23 @@
 </head>
 <body>
 
+<div id="welcome-overlay">
+    <div class="welcome-content">
+        <div class="welcome-title">Grant's Picks</div>
+        <div class="welcome-desc">A highly curated, no-bullshit guide to my favorite spots in the city. Good food, good drinks, good vibes only.</div>
+        <button class="welcome-btn" id="enter-btn">Explore the Map</button>
+    </div>
+</div>
+
 <a href="https://instagram.com/grantwillian" target="_blank" class="watermark glass-ui">@grantwillian</a>
 
 <div class="filter-group glass-ui">
     <select id="category-select">
-        <option value="all">Filter Spots</option>
-        <option value="Restaurant">Restaurants</option>
-        <option value="Bakery/Cafe">Bakeries</option>
-        <option value="Bar/Speakeasy">Bars</option>
-        <option value="Shop">Shops</option>
+        <option value="all">FILTER SPOTS</option>
+        <option value="Restaurant">RESTAURANTS</option>
+        <option value="Bakery/Cafe">BAKERIES</option>
+        <option value="Bar/Speakeasy">BARS</option>
+        <option value="Shop">SHOPS</option>
     </select>
 </div>
 
@@ -100,7 +128,7 @@
     
     const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/dark-v11', // High-end Midnight base
+        style: 'mapbox://styles/mapbox/dark-v11', // Premium Midnight Base
         center: [-73.988, 40.730], 
         zoom: 15.5,
         pitch: 62, 
@@ -116,7 +144,7 @@
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     map.on('load', () => {
-        // --- 3D BUILDINGS & FOG ---
+        // --- ADD 3D BUILDINGS & FOG ---
         const layers = map.getStyle().layers;
         const labelLayerId = layers.find(l => l.type === 'symbol' && l.layout['text-field']).id;
 
@@ -138,10 +166,7 @@
         map.setFog({ 'range': [0.5, 10], 'color': '#000', 'horizon-blend': 0.05 });
 
         // --- RADAR PULSE LAYER ---
-        // Ensure this matches your exact layer name in Mapbox Studio
-        const layerID = 'grantsentmemap'; 
-        const existingLayer = map.getLayer(layerID);
-        
+        const existingLayer = map.getLayer('grantsentmemap');
         if (existingLayer) {
             map.addLayer({
                 'id': 'pulse-layer',
@@ -149,14 +174,11 @@
                 'source': existingLayer.source,
                 'source-layer': existingLayer.sourceLayer,
                 'paint': { 'circle-radius': 0, 'circle-color': '#FF0000', 'circle-opacity': 1, 'circle-stroke-width': 0 }
-            }, layerID);
+            }, 'grantsentmemap');
 
-            let radius = 0;
-            let opacity = 1;
-
+            let radius = 0, opacity = 1;
             function animatePulse() {
-                radius += 0.25;
-                opacity -= 0.015;
+                radius += 0.25; opacity -= 0.015;
                 if (radius > 18) { radius = 0; opacity = 1; }
                 map.setPaintProperty('pulse-layer', 'circle-radius', radius);
                 map.setPaintProperty('pulse-layer', 'circle-opacity', Math.max(0, opacity)); 
@@ -166,7 +188,7 @@
         }
     });
 
-    // --- POPUP LOGIC ---
+    // --- POPUP & CLICK LOGIC ---
     map.on('click', 'grantsentmemap', (e) => {
         const props = e.features[0].properties;
         const coordinates = e.features[0].geometry.coordinates.slice();
@@ -174,19 +196,20 @@
         const img = props['Photo URL'] || props['Photo URL '];
         const mustOrder = props['Must Order'] || props['Must-Order'];
         const reel = props['Reel Link'] || props['Reel URL'] || props['Video Link'];
-        
+        const metaText = [props.Cuisine, props.Price].filter(Boolean).join(' • ');
+
         const html = `
             ${img ? `<img class="popup-img" src="${img.trim()}">` : ''}
             ${mustOrder ? `<div class="popup-must-order"><span>MUST TRY:</span> ${mustOrder}</div>` : ''}
             <div class="popup-inner">
                 <div class="popup-title">${props.Name}</div>
-                <div class="popup-meta">${props.Cuisine || ''} • ${props.Price || ''}</div>
+                <div class="popup-meta">${metaText}</div>
                 <div class="popup-score">GRANT SCORE: ${props.Score}</div>
                 <div class="popup-take">"${props.Review || 'No review yet.'}"</div>
             </div>
             <div class="btn-container">
                 ${reel ? `<a href="${reel}" target="_blank" class="btn btn-reel">Watch the Viral Reel</a>` : ''}
-                <a href="${props['IG Link'] || '#'}" target="_blank" class="btn btn-black">Instagram</a>
+                <a href="${props['IG Link'] || props['Social Link'] || '#'}" target="_blank" class="btn btn-black">Instagram</a>
                 <a href="${props['Link to their Website'] || '#'}" target="_blank" class="btn btn-outline">Website</a>
             </div>
         `;
@@ -212,6 +235,12 @@
 
     map.on('mouseenter', 'grantsentmemap', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'grantsentmemap', () => { map.getCanvas().style.cursor = ''; });
+
+    document.getElementById('enter-btn').addEventListener('click', () => {
+        const overlay = document.getElementById('welcome-overlay');
+        overlay.style.opacity = '0'; 
+        setTimeout(() => { overlay.style.display = 'none'; }, 400); 
+    });
 
 </script>
 </body>
